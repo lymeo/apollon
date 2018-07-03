@@ -33,15 +33,16 @@ const start = async () => {
   const app = express();
 
   app.use(
-    "/graphql",
+    "/",
     cors(),
     authenticate(connectors),
     bodyParser.json(),
-    graphqlExpress(async (req, res) => {
+    graphqlExpress(async (request, response) => {
       return {
         context: {
           connectors,
-          app
+          app,
+          request
         },
         formatError,
         schema
@@ -54,7 +55,7 @@ const start = async () => {
     cors(),
     bodyParser.json(),
     graphiqlExpress({
-      endpointURL: "/graphql"
+      endpointURL: "/"
       // SubscriptionEndpoint: `ws://localhost:3000/subscriptions`
     })
   );
