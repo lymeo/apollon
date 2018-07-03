@@ -22,7 +22,6 @@ const start = async () => {
   for (let propertyName in connectors) {
     connectors[propertyName] = await connectors[propertyName]();
   }
-
   const app = express();
 
   app.use(
@@ -34,6 +33,7 @@ const start = async () => {
       return {
         context: {
           // orientDb: connectors.orientDb,
+          local: connectors.local,
           app
         },
         formatError,

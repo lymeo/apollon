@@ -1,2 +1,7 @@
 scalar Object
 
+type Comment {
+    id: String
+    content: String
+    author: String
+}

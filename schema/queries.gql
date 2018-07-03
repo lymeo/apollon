@@ -1,2 +1,4 @@
 type Query {
+    getAll: [Comment]
+    getById(id: ID!): Comment 
 }

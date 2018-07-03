@@ -3,7 +3,6 @@ const {URL} = require('url');
 // const { PubSub } = require("graphql-subscriptions");
 // const pubsub = new PubSub();
 
-const entityDao = require('../dao/entities');
 
 const { GraphQLScalarType } = require('graphql')
 const { Kind } = require('graphql/language')
@@ -73,5 +72,5 @@ let schema = {
 };
 
 // require("PATH_DU_RESOLVER")(schema);
-
+require("../resolvers/comments")(schema);
 module.exports = schema;
