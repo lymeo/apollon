@@ -21,14 +21,13 @@ const corsConfig = require("../config/cors.json");
 
 
 const start = async () => {
+  
   // Initialisation of the connectors
-
   for (let connectorName in connectors) {
     connectors[connectorName] = connectors[connectorName]();
   }
 
   // Waiting for them to be ready
-
   for (let connectorName in connectors) {
     connectors[connectorName] = await connectors[connectorName];
   }
