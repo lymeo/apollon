@@ -1,8 +1,8 @@
 {
 	"_type": "export",
 	"__export_format": 3,
-	"__export_date": "2018-07-03T14:11:09.847Z",
-	"__export_source": "insomnia.desktop.app:v5.16.6",
+	"__export_date": "2018-07-03T16:44:46.478Z",
+	"__export_source": "insomnia.desktop.app:v5.12.4",
 	"resources": [
 		{
 			"_id": "wrk_0dbda52bcfee43d0b3b44cdef6d9a2dc",
@@ -49,19 +49,17 @@
 					"value": "application/json"
 				}
 			],
-			"isPrivate": false,
 			"metaSortKey": -1530624368683,
 			"method": "POST",
-			"modified": 1530626966394,
+			"modified": 1530636232803,
 			"name": "Get All Comments",
 			"parameters": [],
 			"parentId": "wrk_0dbda52bcfee43d0b3b44cdef6d9a2dc",
 			"settingDisableRenderRequestBody": false,
 			"settingEncodeUrl": true,
-			"settingRebuildPath": true,
 			"settingSendCookies": true,
 			"settingStoreCookies": true,
-			"url": "http://localhost:3000/graphql",
+			"url": "http://localhost:3000/",
 			"_type": "request"
 		},
 		{
@@ -80,19 +78,17 @@
 					"value": "application/json"
 				}
 			],
-			"isPrivate": false,
 			"metaSortKey": -1530624368658,
 			"method": "POST",
-			"modified": 1530626976036,
+			"modified": 1530636228668,
 			"name": "Get By ID ",
 			"parameters": [],
 			"parentId": "wrk_0dbda52bcfee43d0b3b44cdef6d9a2dc",
 			"settingDisableRenderRequestBody": false,
 			"settingEncodeUrl": true,
-			"settingRebuildPath": true,
 			"settingSendCookies": true,
 			"settingStoreCookies": true,
-			"url": "http://localhost:3000/graphql",
+			"url": "http://localhost:3000/",
 			"_type": "request"
 		},
 		{
@@ -111,19 +107,17 @@
 					"value": "application/json"
 				}
 			],
-			"isPrivate": false,
 			"metaSortKey": -1530624368633,
 			"method": "POST",
-			"modified": 1530626963427,
+			"modified": 1530636226049,
 			"name": "Create",
 			"parameters": [],
 			"parentId": "wrk_0dbda52bcfee43d0b3b44cdef6d9a2dc",
 			"settingDisableRenderRequestBody": false,
 			"settingEncodeUrl": true,
-			"settingRebuildPath": true,
 			"settingSendCookies": true,
 			"settingStoreCookies": true,
-			"url": "http://localhost:3000/graphql",
+			"url": "http://localhost:3000/",
 			"_type": "request"
 		},
 		{
@@ -142,19 +136,17 @@
 					"value": "application/json"
 				}
 			],
-			"isPrivate": false,
 			"metaSortKey": -1530624368608,
 			"method": "POST",
-			"modified": 1530626978262,
+			"modified": 1530636223460,
 			"name": "Update",
 			"parameters": [],
 			"parentId": "wrk_0dbda52bcfee43d0b3b44cdef6d9a2dc",
 			"settingDisableRenderRequestBody": false,
 			"settingEncodeUrl": true,
-			"settingRebuildPath": true,
 			"settingSendCookies": true,
 			"settingStoreCookies": true,
-			"url": "http://localhost:3000/graphql",
+			"url": "http://localhost:3000/",
 			"_type": "request"
 		},
 		{
@@ -173,19 +165,17 @@
 					"value": "application/json"
 				}
 			],
-			"isPrivate": false,
 			"metaSortKey": -1530624368583,
 			"method": "POST",
-			"modified": 1530626961345,
+			"modified": 1530636220242,
 			"name": "Delete",
 			"parameters": [],
 			"parentId": "wrk_0dbda52bcfee43d0b3b44cdef6d9a2dc",
 			"settingDisableRenderRequestBody": false,
 			"settingEncodeUrl": true,
-			"settingRebuildPath": true,
 			"settingSendCookies": true,
 			"settingStoreCookies": true,
-			"url": "http://localhost:3000/graphql",
+			"url": "http://localhost:3000/",
 			"_type": "request"
 		}
 	]
