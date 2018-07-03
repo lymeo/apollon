@@ -1,0 +1,6 @@
+{
+    "presets": [
+        ["@babel/preset-stage-0", { "decoratorsLegacy": true }]
+    ],
+    "plugins": ["transform-function-bind", "@babel/plugin-proposal-pipeline-operator"]
+}

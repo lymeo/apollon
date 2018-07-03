@@ -1,0 +1,1 @@
+directive @from(name: String) on INPUT_OBJECT
