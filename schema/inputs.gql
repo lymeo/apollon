@@ -1,0 +1,9 @@
+input IComment {
+    content: String!
+    author: String!
+}
+
+input IUComment {
+    content: String
+    author: String
+}
