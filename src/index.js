@@ -19,7 +19,7 @@ const formatError = require("./formatError");
 const connectors = requireDir("../connectors");
 
 const start = async () => {
-  
+
   // Initialisation of the connectors
   for (let connectorName in connectors) {
     connectors[connectorName] = connectors[connectorName]();
@@ -32,9 +32,14 @@ const start = async () => {
   const app = express();
 
   app.use(
-    "/",
+    "/graphql",
     cors(),
-    authenticate(connectors),
+    async (request, response, next) => {
+      console.log("hello")
+      await authenticate(connectors)(request, next, function(){
+        response.status(401).send();
+      })
+    },
     bodyParser.json(),
     graphqlExpress(async (request, response) => {
       return {
@@ -54,7 +59,7 @@ const start = async () => {
     cors(),
     bodyParser.json(),
     graphiqlExpress({
-      endpointURL: "/"
+      endpointURL: "/graphql"
       // SubscriptionEndpoint: `ws://localhost:3000/subscriptions`
     })
   );
