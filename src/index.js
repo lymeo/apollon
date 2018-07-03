@@ -19,22 +19,34 @@ const formatError = require("./formatError");
 const connectors = requireDir("../connectors");
 
 const start = async () => {
-  for (let propertyName in connectors) {
-    connectors[propertyName] = await connectors[propertyName]();
+
+  // Initialisation of the connectors
+  for (let connectorName in connectors) {
+    connectors[connectorName] = connectors[connectorName]();
   }
 
+  // Waiting for them to be ready
+  for (let connectorName in connectors) {
+    connectors[connectorName] = await connectors[connectorName];
+  }
   const app = express();
 
   app.use(
     "/graphql",
     cors(),
-    // authenticate(orientDb),
+    async (request, response, next) => {
+      console.log("hello")
+      await authenticate(connectors)(request, next, function(){
+        response.status(401).send();
+      })
+    },
     bodyParser.json(),
-    graphqlExpress(async (req, res) => {
+    graphqlExpress(async (request, response) => {
       return {
         context: {
-          // orientDb: connectors.orientDb,
-          app
+          connectors,
+          app,
+          request
         },
         formatError,
         schema
@@ -47,7 +59,7 @@ const start = async () => {
     cors(),
     bodyParser.json(),
     graphiqlExpress({
-      endpointURL: "/graphql",
+      endpointURL: "/graphql"
       // SubscriptionEndpoint: `ws://localhost:3000/subscriptions`
     })
   );
@@ -56,7 +68,7 @@ const start = async () => {
   const PORT = 3000;
 
   server.listen(PORT, () => {
-    console.log(`Lymeo GraphQL server running on port ${PORT}.`);
+    console.log(`Apollon server running on port ${PORT}.`);
 
     // SubscriptionServer.create(
     //   {

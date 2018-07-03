@@ -1,2 +1,5 @@
 type Mutation {
+    create(data: IComment!): Comment
+    delete(id: ID!): Boolean
+    update(id: ID!, data: IUComment): Boolean
 }
