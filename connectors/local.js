@@ -1,5 +1,3 @@
-var OrientDB = require("orientjs");
-
 let comments = [
   {
     id: "0",
