@@ -1,4 +1,4 @@
-function authenticator(orientDb) {
+function authenticator(connectors) {
 
 	return async function authenticate(request, response, next) {
 		return next();
