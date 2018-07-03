@@ -1,13 +1,12 @@
-const {URL} = require('url');
+const { URL } = require("url");
 
 // const { PubSub } = require("graphql-subscriptions");
 // const pubsub = new PubSub();
 
-
-const { GraphQLScalarType } = require('graphql')
-const { Kind } = require('graphql/language')
+const requireDir = require("require-dir");
+const { GraphQLScalarType } = require("graphql");
+const { Kind } = require("graphql/language");
 // const pubsub = require('../pubsub');
-
 
 class ValidationError extends Error {
   constructor(message, field) {
@@ -16,50 +15,55 @@ class ValidationError extends Error {
   }
 }
 
-function assertValidLink ({url}) {
+function assertValidLink({ url }) {
   try {
     new URL(url);
   } catch (error) {
-    throw new ValidationError('Link validation error: invalid url.', 'url');
+    throw new ValidationError("Link validation error: invalid url.", "url");
   }
 }
 
 const ObjectScalarType = new GraphQLScalarType({
-  name: 'Object',
-  description: 'Arbitrary object',
-  parseValue: (value) => {
-    return typeof value === 'object' ? value
-      : typeof value === 'string' ? JSON.parse(value)
-      : null
+  name: "Object",
+  description: "Arbitrary object",
+  parseValue: value => {
+    return typeof value === "object"
+      ? value
+      : typeof value === "string"
+        ? JSON.parse(value)
+        : null;
   },
-  serialize: (value) => {
-    return typeof value === 'object' ? value
-      : typeof value === 'string' ? JSON.parse(value)
-      : null
+  serialize: value => {
+    return typeof value === "object"
+      ? value
+      : typeof value === "string"
+        ? JSON.parse(value)
+        : null;
   },
-  parseLiteral: (ast) => {
+  parseLiteral: ast => {
     switch (ast.kind) {
-      case Kind.STRING: return JSON.parse(ast.value)
+      case Kind.STRING:
+        return JSON.parse(ast.value);
       case Kind.OBJECT:
         let robj = {};
-        let r = function(root, obj){
-          if(root.fields){
+        let r = function(root, obj) {
+          if (root.fields) {
             root.fields.forEach(e => {
-              if(e.value.kind == Kind.OBJECT){
+              if (e.value.kind == Kind.OBJECT) {
                 obj[e.name.value] = {};
-                return r(e.value, obj[e.name.value]);              
+                return r(e.value, obj[e.name.value]);
               }
-              return obj[e.name.value] = e.value.value
+              return (obj[e.name.value] = e.value.value);
             });
           }
-        }
-        r(ast,robj);
+        };
+        r(ast, robj);
         return robj;
-      default: return null
+      default:
+        return null;
     }
   }
-})
-
+});
 
 let schema = {
   Query: {},
@@ -71,6 +75,9 @@ let schema = {
   Object: ObjectScalarType
 };
 
-// require("PATH_DU_RESOLVER")(schema);
-require("../resolvers/comments")(schema);
+requireDir("../resolvers", {
+  mapValue: function(value, baseName) {
+    return value(schema);
+  }
+});
 module.exports = schema;

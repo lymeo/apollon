@@ -24,18 +24,21 @@ module.exports = async function() {
       idCounter: 3,
       comments,
       getAll: () => classes.comment.comments,
-      getById: id => classes.comment.comments.filter(comment => comment.id == id)[0],
+      getById: id =>
+        classes.comment.comments.filter(comment => comment.id == id)[0],
       delete: id => {
-        classes.comment.comments = classes.comment.comments.filter(comment => comment.id != id);
+        classes.comment.comments = classes.comment.comments.filter(
+          comment => comment.id != id
+        );
         return true;
       },
       update: (id, p_data) => {
         classes.comment.comments.map(comment => {
-          if (comment.id == id){
+          if (comment.id == id) {
             return Object.assign(comment, p_data);
-          } 
+          }
           return comment;
-        })
+        });
         return true;
       },
       create: p_data => {
