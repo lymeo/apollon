@@ -32,12 +32,20 @@ const start = async () => {
   for (let connectorName in connectors) {
     connectors[connectorName] = await connectors[connectorName];
   }
+
+  //Generate authentication middleware
+  let authenticateMid = authenticate(connectors);
+
   const app = express();
 
   app.use(
-    "/graphql",
+    "/",
     cors(corsConfig),
-    authenticate(connectors),
+    function(request, response, next){
+      authenticateMid(request, next, function(){
+        response.status(401).send();
+      });
+    },
     bodyParser.json(),
     graphqlExpress(async (req, res) => {
       return {

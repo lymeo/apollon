@@ -1,5 +1,5 @@
 function authenticator(connectors) {
-  return async function authenticate(request, response, next) {
+  return async function authenticate(request, accept, reject) {
     return next();
   };
 }
