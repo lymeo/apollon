@@ -17,6 +17,8 @@ const schema = require("./schema");
 const authenticate = require("./authentication");
 const formatError = require("./formatError");
 const connectors = requireDir("../connectors");
+const corsConfig = require("../config/cors.json");
+
 
 const start = async () => {
   // Initialisation of the connectors
@@ -34,7 +36,7 @@ const start = async () => {
 
   app.use(
     "/graphql",
-    cors(),
+    cors(corsConfig),
     authenticate(connectors),
     bodyParser.json(),
     graphqlExpress(async (req, res) => {
@@ -51,7 +53,7 @@ const start = async () => {
 
   app.use(
     "/graphiql",
-    cors(),
+    cors(corsConfig),
     bodyParser.json(),
     graphiqlExpress({
       endpointURL: "/graphql"
