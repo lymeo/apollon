@@ -26,8 +26,6 @@ typeDefs += "\n" + fs.readFileSync(path.join(__dirname, "../schema/inputs.gql"),
 // });
 
 let schemaDirectives = {
-  from: require("../directives/from"),
-  auth: require("../directives/auth"),
 }
 
 // Generate the schema object from schema file and definition.
