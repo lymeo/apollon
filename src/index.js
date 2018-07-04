@@ -13,12 +13,14 @@ const requireDir = require("require-dir");
 // const { SubscriptionServer } = require("subscriptions-transport-ws");
 // const asyncify = require("callback-to-async-iterator");
 
-const schema = require("./schema");
 const authenticate = require("../other/authentication");
 const formatError = require("./formatError");
 const connectors = requireDir("../connectors");
 const corsConfig = require("../config/cors.json");
 
+const {makeExecutableSchema} = require('graphql-tools');
+const rawSchema = require("./schema");
+const schema = makeExecutableSchema(rawSchema);
 
 const start = async () => {
   
@@ -36,7 +38,6 @@ const start = async () => {
   let authenticateMid = authenticate(connectors);
 
   const app = express();
-  console.log(process.env.NODE_ENV)
   if (process.env.NODE_ENV == "dev"){
     console.log("Endpoint /graphiql is accessible");
     app.use(
