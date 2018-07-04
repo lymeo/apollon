@@ -27,5 +27,6 @@ typeDefs += "\n" + fs.readFileSync(path.join(__dirname, "../schema/inputs.gql"),
 
 let schemaDirectives = {
 }
+
 // Generate the schema object from schema file and definition.
 module.exports = {typeDefs,resolvers, schemaDirectives};
