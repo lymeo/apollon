@@ -1,3 +1,9 @@
+/**
+ * 
+ * the name of the file is the name of the directive
+ * 
+ */
+
 let {
   SchemaDirectiveVisitor
 } = require("graphql-tools");
