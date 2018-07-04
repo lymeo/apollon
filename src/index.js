@@ -36,9 +36,22 @@ const start = async () => {
   let authenticateMid = authenticate(connectors);
 
   const app = express();
+  console.log(process.env.NODE_ENV)
+  if (process.env.NODE_ENV == "dev"){
+    console.log("Endpoint /graphiql is accessible");
+    app.use(
+      "/graphiql",
+      cors(corsConfig),
+      bodyParser.json(),
+      graphiqlExpress({
+        endpointURL: "/"
+        // SubscriptionEndpoint: `ws://localhost:3000/subscriptions`
+      })
+    );
+  }
+  
 
-  app.use(
-    "/",
+  app.use("/",
     cors(corsConfig),
     function(request, response, next){
       authenticateMid(request, next, function(){
@@ -58,18 +71,9 @@ const start = async () => {
     })
   );
 
-  app.use(
-    "/graphiql",
-    cors(corsConfig),
-    bodyParser.json(),
-    graphiqlExpress({
-      endpointURL: "/graphql"
-      // SubscriptionEndpoint: `ws://localhost:3000/subscriptions`
-    })
-  );
 
   const server = createServer(app);
-  const PORT = 3000;
+  const PORT = process.env.PORT || 3000;
 
   server.listen(PORT, () => {
     console.log(`Apollon server running on port ${PORT}.`);
