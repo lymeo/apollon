@@ -14,7 +14,7 @@ const requireDir = require("require-dir");
 // const asyncify = require("callback-to-async-iterator");
 
 const schema = require("./schema");
-const authenticate = require("./authentication");
+const authenticate = require("../other/authentication");
 const formatError = require("./formatError");
 const connectors = requireDir("../connectors");
 const corsConfig = require("../config/cors.json");
