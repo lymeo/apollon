@@ -1,0 +1,1 @@
+directive @auth(roles: [String]) on OBJECT | FIELD_DEFINITION

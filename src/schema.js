@@ -1,6 +1,7 @@
 const resolvers = require('./resolvers');
 const fs = require("fs");
 const path = require("path");
+const requireDir = require("require-dir");
 
 
 // Reading schema file
@@ -25,8 +26,8 @@ typeDefs += "\n" + fs.readFileSync(path.join(__dirname, "../schema/inputs.gql"),
 //   encoding: "utf8"
 // });
 
-let schemaDirectives = {
-}
+
+let schemaDirectives = requireDir("../directives")
 
 // Generate the schema object from schema file and definition.
 module.exports = {typeDefs,resolvers, schemaDirectives};
