@@ -1,2 +1,2 @@
 directive @from(name: String) on INPUT_OBJECT
-directive @auth on OBJECT | FIELD_DEFINITION
+directive @auth(roles: [String]) on OBJECT | FIELD_DEFINITION

@@ -1,4 +1,4 @@
 type Query {
     getAll: [Comment]
-    getById(id: ID!): Comment 
+    getById(id: ID!): Comment @auth(roles: ["admin"])
 }
