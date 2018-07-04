@@ -19,7 +19,6 @@ let comments = [
 module.exports = async function() {
   
   return {
-    idCounter: 3,
     comments
   };
 };

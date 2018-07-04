@@ -9,11 +9,10 @@ module.exports = function (db) {
     },
     create: async function (p_data) {
       let data = {
-        id: db.idCounter.toString(),
+        id: new Date().getTime().toString(),
         content: p_data.content || "",
         author: p_data.author || "someone"
       };
-      db.idCounter += 1;
       db.comments.push(data);
       return data;
     },
