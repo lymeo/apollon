@@ -1,2 +1,4 @@
-type Subscription {
-}
+# If you don't have any Subscription, comment all the file
+
+# type Subscription {
+# }

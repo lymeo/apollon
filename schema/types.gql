@@ -1,3 +1,5 @@
+# If you don't have any Type, comment all the file except scalar Object
+
 scalar Object
 
 type Comment {

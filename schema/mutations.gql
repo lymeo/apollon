@@ -1,3 +1,5 @@
+# If you don't have any Mutation, comment all the file
+
 type Mutation {
     create(data: IComment!): Comment
     delete(id: ID!): Boolean

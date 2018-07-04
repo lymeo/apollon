@@ -65,6 +65,11 @@ const ObjectScalarType = new GraphQLScalarType({
   }
 });
 
+// let schema = {
+//   Object: ObjectScalarType
+// };
+
+
 let schema = {
   Query: {},
 
@@ -80,4 +85,12 @@ requireDir("../resolvers", {
     return value(schema);
   }
 });
+
+if (Object.keys(schema.Query).length == 0){
+  delete schema.Query
+}
+if (Object.keys(schema.Mutation).length == 0){
+  delete schema.Mutation
+}
+
 module.exports = schema;
