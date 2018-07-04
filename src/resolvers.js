@@ -65,11 +65,6 @@ const ObjectScalarType = new GraphQLScalarType({
   }
 });
 
-// let schema = {
-//   Object: ObjectScalarType
-// };
-
-
 let schema = {
   Query: {},
 
