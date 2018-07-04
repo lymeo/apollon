@@ -1,4 +1,3 @@
-const {makeExecutableSchema} = require('graphql-tools');
 const resolvers = require('./resolvers');
 const fs = require("fs");
 const path = require("path");
@@ -30,4 +29,4 @@ let schemaDirectives = {
   from: require("../directives/from")
 }
 // Generate the schema object from schema file and definition.
-module.exports = makeExecutableSchema({typeDefs, resolvers, schemaDirectives});
+module.exports = {typeDefs,resolvers, schemaDirectives};
