@@ -1,20 +1,39 @@
-module.exports = function({ db }) {
+
+module.exports = function (db) {
   let dao = {
-    getAll: async function() {
-      return db.classes.comment.getAll();
+    getAll: async function () {
+      return db.comments
     },
-    getById: async function(id) {
-      return db.classes.comment.getById(id);
+    getById: async function (id) {
+      return db.comments.filter(comment => comment.id == id)[0]
     },
-    create: async function(data) {
-      return db.classes.comment.create(data);
+    create: async function (p_data) {
+      let data = {
+        id: db.idCounter.toString(),
+        content: p_data.content || "",
+        author: p_data.author || "someone"
+      };
+      db.idCounter += 1;
+      db.comments.push(data);
+      return data;
     },
-    delete: async function(id) {
-      return db.classes.comment.delete(id);
+    delete: async function (id) {
+      db.comments = db.comments.filter(
+        comment => comment.id != id
+      );
+      return true;
     },
-    update: async function(id, data) {
-      return db.classes.comment.update(id, data);
+
+    update: async function (id, p_data) {
+      db.comments.map(comment => {
+        if (comment.id == id) {
+          return Object.assign(comment, p_data);
+        }
+        return comment;
+      });
+      return true;
     }
+
   };
   return dao;
 };
