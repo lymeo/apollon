@@ -38,7 +38,7 @@ const start = async () => {
   const app = express();
   console.log(process.env.NODE_ENV)
   if (process.env.NODE_ENV == "dev"){
-    console.log("hello")
+    console.log("Endpoint /graphiql is accessible");
     app.use(
       "/graphiql",
       cors(corsConfig),
