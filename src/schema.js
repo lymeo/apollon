@@ -5,9 +5,9 @@ const requireDir = require("require-dir");
 
 
 // Reading schema file
-let typeDefs = "";
+let typeDefs = "scalar Object";
 
-typeDefs += fs.readFileSync(path.join(__dirname, "../schema/directives.gql"), {
+typeDefs += "\n" + fs.readFileSync(path.join(__dirname, "../schema/directives.gql"), {
   encoding: "utf8"
 });
 typeDefs += "\n" + fs.readFileSync(path.join(__dirname, "../schema/types.gql"), {
@@ -30,4 +30,8 @@ typeDefs += "\n" + fs.readFileSync(path.join(__dirname, "../schema/inputs.gql"),
 let schemaDirectives = requireDir("../directives")
 
 // Generate the schema object from schema file and definition.
-module.exports = {typeDefs,resolvers, schemaDirectives};
+module.exports = {
+  typeDefs,
+  resolvers,
+  schemaDirectives
+};
