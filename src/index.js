@@ -36,9 +36,9 @@ const start = async () => {
 
   //Generate authentication middleware
   let authenticateMid = authenticate(connectors);
-
   const app = express();
-  if (process.env.NODE_ENV == "dev"){
+
+  if (process.argv[2] == "dev" || process.env.NODE_ENV == "dev"){
     console.log("Endpoint /graphiql is accessible");
     app.use(
       "/graphiql",
