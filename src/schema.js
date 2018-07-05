@@ -5,7 +5,7 @@ const requireDir = require("require-dir");
 
 
 // Reading schema file
-let typeDefs = "scalar Object";
+let typeDefs = "";
 
 typeDefs += "\n" + fs.readFileSync(path.join(__dirname, "../schema/directives.gql"), {
   encoding: "utf8"

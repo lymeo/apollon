@@ -1,39 +1,56 @@
-# Getting Started
+# Apollon
 
-These informations will introduce you the different folders in the Userland
+## Mainly a template
 
-## config
+This project is a template. You can add and change folders and files as you seem fit. **Let's explain the out of the box structure.**
 
-In this folder, you can place all your configuration files, in the example, there is a configuration file for the cors and the endpointURL
+### The /config directory
 
-## connectors
+This folder is meant to contain all the json or js files used as configuration ressources. The project comes with two existing config files the ```cors.json``` file and the ```general.json```. The first one configures CORS and is passed to the **cors node module**. The second is used in the template in the two following use cases.
+  1. To change the api endpoint url
+  2. As a configuration file passed into different scopes with the context object
+> The context object is an object passed to the resolvers containing the references to most of the global objects (like the connectors). For more informaton please take a look at the resolver documentation file in this directory
 
-In this folder, you can set the connectors to access to your database and create your database. In the example, a local database containing 3 objects is created 
+### The /src folder
 
-## dao
+This contains all the code powering Apollon and should only be changed if you know what you are doing. If changes are made that seem to improve apollon please contribute to the project.
 
-In this folder, you can describe the interactions of your requests with your database, so you can define different types of database and handle all the specific requests there 
+### /schema folder
 
-## directives
+This folder contains the GraphQl schema seperated into multiple files. Please refer to the graphql documentation for the content of the schema. 
+  
+### The /resolvers folder
 
-In this folder, you can set your directives, a directive is an identifier preceded by a @, which can be followed by a list of arguments and can appear after almost any form of syntax in the GraphQL schema
+This folder contains all the resolvers. Please refer to the resolver documentation contained in this folder.
 
-## helpers
+### The /connectors folder
 
-In this folder, you can define different function to help you in your development
+A connector is a source of data and is stored in the context objects connectors object under a key matching the filename.
+```
+context.connectors[filename]
 
-## other
+/* Example */
+context.connectors.mysql
+```
+ Whatever is returned by the asynchronous function exported in each connector file will be considered as the actual connector:
+ ```
+ const mysql = require("mysql");
 
-In this folder, you can place other things that do not match with the other folders
+ module.exports = async function(){
+     let options = {
+         server: "127.0.0.1",
+         user: "root",
+         password: "qwerty"
+     };
 
-## resolvers
+     return await mysql.connect(options);
+ }
+ ```
 
-In this folder, you can define your resolvers, which are defined separately from the schema with GraphQL, because the schema already describes fields, arguments and return types. The resolvers are functions called to execute these fields
+ ### The /types folder
 
-## ressources
+ In this file you will find implementation of different types needed in the schema
 
-In this folder, you can place all the ressources that you need
+ ### The /directivers folder
 
-## schema
-
-In this folder, you can describe your schema. A GraphQL schema is at the center of any GraphQL server implementation and describes the functionality available to the clients which connect to it. You can set in this directory your queries, mutations, inputs and so on...
+ In this file you will find implementation of different directives needed in the schema
