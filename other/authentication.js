@@ -1,10 +1,10 @@
 /**
  * function returning authentication middleware
- * @param {Object} connectors The different connectors specified in the connectors folder
+ * @param {Object} context The context containing connectors and config
  * 
  * @returns {async function} Asynchronous authentication middleware
  */
-function authenticator(connectors) {
+function authenticator(context) {
   return async function authenticate(request, accept, reject) {
     return accept();
   };
