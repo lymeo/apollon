@@ -16,11 +16,14 @@ const requireDir = require("require-dir");
 const authenticate = require("../other/authentication");
 const formatError = require("./formatError");
 const connectors = requireDir("../connectors");
-const corsConfig = require("../config/cors.json");
 
 const {makeExecutableSchema} = require('graphql-tools');
 const rawSchema = require("./schema");
 const schema = makeExecutableSchema(rawSchema);
+
+const corsConfig = require("../config/cors.json");
+const config = require("../config/general.json");
+
 
 const start = async () => {
   
@@ -35,7 +38,7 @@ const start = async () => {
   }
 
   //Generate authentication middleware
-  let authenticateMid = authenticate(connectors);
+  let authenticateMid = authenticate({connectors, app, config});
   const app = express();
 
   if (process.argv[2] == "dev" || process.env.NODE_ENV == "dev"){
@@ -45,14 +48,14 @@ const start = async () => {
       cors(corsConfig),
       bodyParser.json(),
       graphiqlExpress({
-        endpointURL: "/"
+        endpointURL: config.endpoint || "/"
         // SubscriptionEndpoint: `ws://localhost:3000/subscriptions`
       })
     );
   }
   
 
-  app.use("/",
+  app.use(config.endpoint || "/",
     cors(corsConfig),
     function(request, response, next){
       authenticateMid(request, next, function(){
@@ -60,11 +63,13 @@ const start = async () => {
       });
     },
     bodyParser.json(),
-    graphqlExpress(async (req, res) => {
+    graphqlExpress(async (request, res) => {
       return {
         context: {
           connectors,
-          app
+          app,
+          request,
+          config
         },
         formatError,
         schema
