@@ -6,7 +6,7 @@ const dir = path.join(__dirname, '../dist');
 
 if (!fs.existsSync(dir)) {
     fs.mkdirSync(dir);
-    console.log("the folder 'dist' was created at the root of the project")
+    console.log("The 'dist' folder was created at the root of the project")
 }
 
 let fileName = process.argv[2] || `schema.gql`;
@@ -18,5 +18,5 @@ if (!fileName.endsWith('.gql')) {
 fs.writeFile(`${dir + '/' +fileName}`, schema.typeDefs, function (err) {
     if (err) throw err;
 
-    console.log(`The schema was created in the folder 'dist/${fileName}'`);
+    console.log(`The schema '/dist/${fileName}' was created.`);
 });
