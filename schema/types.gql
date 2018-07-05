@@ -1,7 +1,8 @@
-scalar Object
-
 type Comment {
     id: String
     content: String
     author: String
 }
+
+# you will find the implementation in the types folder
+scalar Object

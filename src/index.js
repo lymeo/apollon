@@ -13,13 +13,20 @@ const requireDir = require("require-dir");
 // const { SubscriptionServer } = require("subscriptions-transport-ws");
 // const asyncify = require("callback-to-async-iterator");
 
-const schema = require("./schema");
-const authenticate = require("./authentication");
+const authenticate = require("../other/authentication");
 const formatError = require("./formatError");
 const connectors = requireDir("../connectors");
 
-const start = async () => {
+const {makeExecutableSchema} = require('graphql-tools');
+const rawSchema = require("./schema");
+const schema = makeExecutableSchema(rawSchema);
 
+const corsConfig = require("../config/cors.json");
+const config = require("../config/general.json");
+
+
+const start = async () => {
+  
   // Initialisation of the connectors
   for (let connectorName in connectors) {
     connectors[connectorName] = connectors[connectorName]();
@@ -29,24 +36,40 @@ const start = async () => {
   for (let connectorName in connectors) {
     connectors[connectorName] = await connectors[connectorName];
   }
+
+  //Generate authentication middleware
+  let authenticateMid = authenticate({connectors, app, config});
   const app = express();
 
-  app.use(
-    "/graphql",
-    cors(),
-    async (request, response, next) => {
-      console.log("hello")
-      await authenticate(connectors)(request, next, function(){
-        response.status(401).send();
+  if (process.argv[2] == "dev" || process.env.NODE_ENV == "dev"){
+    console.log("Endpoint /graphiql is accessible");
+    app.use(
+      "/graphiql",
+      cors(corsConfig),
+      bodyParser.json(),
+      graphiqlExpress({
+        endpointURL: config.endpoint || "/"
+        // SubscriptionEndpoint: `ws://localhost:3000/subscriptions`
       })
+    );
+  }
+  
+
+  app.use(config.endpoint || "/",
+    cors(corsConfig),
+    function(request, response, next){
+      authenticateMid(request, next, function(){
+        response.status(401).send();
+      });
     },
     bodyParser.json(),
-    graphqlExpress(async (request, response) => {
+    graphqlExpress(async (request, res) => {
       return {
         context: {
           connectors,
           app,
-          request
+          request,
+          config
         },
         formatError,
         schema
@@ -54,18 +77,9 @@ const start = async () => {
     })
   );
 
-  app.use(
-    "/graphiql",
-    cors(),
-    bodyParser.json(),
-    graphiqlExpress({
-      endpointURL: "/graphql"
-      // SubscriptionEndpoint: `ws://localhost:3000/subscriptions`
-    })
-  );
 
   const server = createServer(app);
-  const PORT = 3000;
+  const PORT = process.env.PORT || 3000;
 
   server.listen(PORT, () => {
     console.log(`Apollon server running on port ${PORT}.`);

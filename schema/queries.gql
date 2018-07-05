@@ -1,4 +1,6 @@
+# If you don't have any Query, comment all the file
+
 type Query {
     getAll: [Comment]
-    getById(id: ID!): Comment 
+    getById(id: ID!): Comment @auth(roles: ["admin"])
 }
