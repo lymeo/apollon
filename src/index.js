@@ -12,8 +12,9 @@ const { createServer } = require('http');
 const cors = require('cors');
 const bodyParser = require('body-parser');
 const requireDir = require('require-dir');
-// const { SubscriptionServer } = require("subscriptions-transport-ws");
-// const asyncify = require("callback-to-async-iterator");
+const { SubscriptionServer } = require("subscriptions-transport-ws");
+const { PubSub } = require("graphql-subscriptions");
+const pubsub = new PubSub();
 
 const authenticate = require('../other/authentication');
 const formatError = require('./formatError');
@@ -48,6 +49,7 @@ const start = async () => {
 		connectors,
 		app,
 		config,
+		pubsub,
 		logger: logger.child({ scope: 'userland' })
 	};
 	logger.debug('Created context object');
@@ -62,8 +64,8 @@ const start = async () => {
 			cors(corsConfig),
 			bodyParser.json(),
 			graphiqlExpress({
-				endpointURL: config.endpoint || '/'
-				// SubscriptionEndpoint: `ws://localhost:3000/subscriptions`
+				endpointURL: config.endpoint || '/',
+				SubscriptionEndpoint: `ws://localhost:3000/subscriptions`
 			})
 		);
 		logger.info('Endpoint /graphiql is accessible');
@@ -92,7 +94,9 @@ const start = async () => {
 					connectors,
 					app,
 					request,
+					response,
 					config,
+					pubsub,
 					logger: logger.child({ scope: 'userland' })
 				},
 				formatError,
@@ -107,7 +111,23 @@ const start = async () => {
 	logger.debug('Wrapping app in an HTTP server');
 
 	server.listen(PORT, () => {
+		SubscriptionServer.create(
+			{
+			  execute,
+			  subscribe,
+			  schema,
+			  onOperation: (message, params, webSocket) => {
+				return { ...params, context }
+			  },
+			},
+			{
+			  server,
+			  path: "/subscriptions"
+			}
+		);
 		logger.info('Apollon started', { port: PORT });
+
+
 	});
 };
 
