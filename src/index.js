@@ -39,16 +39,21 @@ const start = async () => {
 	for (let connectorName in connectors) {
 		connectors[connectorName] = await connectors[connectorName];
 	}
+	logger.debug('Connectors initialized');
 
-	logger.debug('Starting the express app');
 	const app = express();
-	logger.debug('Generating authentication middleware');
-	let authenticateMid = authenticate({
+	logger.debug('Express app started');
+
+	let context = {
 		connectors,
 		app,
 		config,
 		logger: logger.child({ scope: 'userland' })
-	});
+	};
+	logger.debug('Created context object');
+
+	let authenticateMid = authenticate(context);
+	logger.debug('Authentication middleware generated');
 
 	if (process.argv[2] == 'dev' || process.env.NODE_ENV == 'dev') {
 		logger.debug('Starting the GraphIQL endpoint');
@@ -64,7 +69,6 @@ const start = async () => {
 		logger.info('Endpoint /graphiql is accessible');
 	}
 
-	logger.debug('Starting the main endpoint', { port: config.endpoint || '/' });
 	app.use(
 		config.endpoint || '/',
 		cors(corsConfig),
@@ -96,28 +100,14 @@ const start = async () => {
 			};
 		})
 	);
+	logger.debug('Initialised the main endpoint', { port: config.endpoint || '/' });
 
-	logger.debug('Starting the main endpoint');
 	const server = createServer(app);
 	const PORT = process.env.PORT || 3000;
+	logger.debug('Wrapping app in an HTTP server');
 
 	server.listen(PORT, () => {
-		logger.info('Apollon started on port %s', PORT);
-
-		// SubscriptionServer.create(
-		//   {
-		//     execute,
-		//     subscribe,
-		//     schema,
-		//     onConnect: async (connectionParams, webSocket) => {
-		//       console.log('webSocket connected');
-		//     }
-		//   },
-		//   {
-		//     server,
-		//     path: "/subscriptions"
-		//   }
-		// );
+		logger.info('Apollon started', { port: PORT });
 	});
 };
 
