@@ -42,9 +42,11 @@ typeDefs +=
 		encoding: 'utf8'
 	});
 logger.debug('Added inputs to mutations schema');
-// typeDefs += "\n" + fs.readFileSync(path.join(__dirname, "../schema/subscriptions.gql"), {
-//   encoding: "utf8"
-// });
+typeDefs += '\n' + fs.readFileSync(path.join(__dirname, '../schema/subscriptions.gql'), {
+	encoding: 'utf8'
+});
+logger.debug('Added subscriptions to mutations schema');
+
 
 let schemaDirectives = requireDir('../directives');
 logger.debug('Included directive implementations');
