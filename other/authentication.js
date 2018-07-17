@@ -5,9 +5,10 @@
  * @returns {async function} Asynchronous authentication middleware
  */
 function authenticator(context) {
-  return async function authenticate(request, accept, reject) {
-    return accept();
-  };
+	return async function authenticate(request, accept, reject) {
+		context.logger.debug('Authentication challenge');
+		return accept();
+	};
 }
 
 module.exports = authenticator;

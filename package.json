@@ -1,6 +1,6 @@
 {
   "name": "api_template",
-  "version": "1.0.0",
+  "version": "1.0.0-alpha",
   "description": "",
   "main": "index.js",
   "scripts": {
@@ -22,6 +22,7 @@
     "@babel/register": "^7.0.0-beta.51",
     "apollo-server-express": "^1.3.6",
     "body-parser": "^1.18.3",
+    "bunyan": "^1.8.12",
     "callback-to-async-iterator": "^1.1.1",
     "cors": "^2.8.4",
     "express": "^4.16.3",
