@@ -2,7 +2,8 @@ require('@babel/polyfill');
 require('@babel/register');
 require('@babel/plugin-proposal-pipeline-operator');
 require('babel-plugin-transform-function-bind');
-let debug = require('debug')('apollon');
+
+const logger = require('./logger');
 
 const express = require('express');
 const { execute, subscribe } = require('graphql');
@@ -26,26 +27,31 @@ const corsConfig = require('../config/cors.json');
 const config = require('../config/general.json');
 
 const start = async () => {
-	debug('Apollon initializing');
+	logger.info('Apollon initializing');
 
 	// Initialisation of the connectors
 	for (let connectorName in connectors) {
 		connectors[connectorName] = connectors[connectorName]();
 	}
 
-	debug('Waiting for connectors to initialize');
+	logger.debug('Waiting for connectors to initialize');
 	// Waiting for them to be ready
 	for (let connectorName in connectors) {
 		connectors[connectorName] = await connectors[connectorName];
 	}
 
-	debug('Starting the express app');
+	logger.debug('Starting the express app');
 	const app = express();
-	debug('Generating authentication middleware');
-	let authenticateMid = authenticate({ connectors, app, config });
+	logger.debug('Generating authentication middleware');
+	let authenticateMid = authenticate({
+		connectors,
+		app,
+		config,
+		logger: logger.child({ scope: 'userland' })
+	});
 
 	if (process.argv[2] == 'dev' || process.env.NODE_ENV == 'dev') {
-		debug('Starting the GraphIQL endpoint');
+		logger.debug('Starting the GraphIQL endpoint');
 		app.use(
 			'/graphiql',
 			cors(corsConfig),
@@ -55,10 +61,10 @@ const start = async () => {
 				// SubscriptionEndpoint: `ws://localhost:3000/subscriptions`
 			})
 		);
-		console.log('Endpoint /graphiql is accessible');
+		logger.info('Endpoint /graphiql is accessible');
 	}
 
-	debug('Starting the main endpoint on %s', config.endpoint || '/');
+	logger.debug('Starting the main endpoint', { port: config.endpoint || '/' });
 	app.use(
 		config.endpoint || '/',
 		cors(corsConfig),
@@ -67,11 +73,11 @@ const start = async () => {
 			authenticateMid(
 				request,
 				() => {
-					debug('Authentication passed: %s', JSON.stringify(request.body));
+					logger.info({ request }, 'Authentication passed');
 					next();
 				},
 				() => {
-					debug('Authentication rejected: %s', JSON.stringify(request.body));
+					logger.warn({ request }, 'Authentication rejected');
 					response.status(401).send();
 				}
 			);
@@ -82,7 +88,8 @@ const start = async () => {
 					connectors,
 					app,
 					request,
-					config
+					config,
+					logger: logger.child({ scope: 'userland' })
 				},
 				formatError,
 				schema
@@ -90,13 +97,12 @@ const start = async () => {
 		})
 	);
 
-	debug('Starting the main endpoint');
+	logger.debug('Starting the main endpoint');
 	const server = createServer(app);
 	const PORT = process.env.PORT || 3000;
 
 	server.listen(PORT, () => {
-		debug('Apollon started on port %s', PORT);
-		console.log(`Apollon server running on port ${PORT}.`);
+		logger.info('Apollon started on port %s', PORT);
 
 		// SubscriptionServer.create(
 		//   {
