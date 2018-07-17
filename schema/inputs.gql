@@ -1,11 +1,1 @@
 # If you don't have any Input, comment all the file
-
-input IComment {
-    content: String!
-    author: String!
-}
-
-input IUComment {
-    content: String
-    author: String
-}
