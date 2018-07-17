@@ -88,7 +88,7 @@ const start = async () => {
 				}
 			);
 		},
-		graphqlExpress(async (request, res) => {
+		graphqlExpress(async (request, response) => {
 			return {
 				context: {
 					connectors,
