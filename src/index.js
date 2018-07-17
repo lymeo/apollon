@@ -113,18 +113,19 @@ const start = async () => {
 	server.listen(PORT, () => {
 		SubscriptionServer.create(
 			{
-			  execute,
-			  subscribe,
-			  schema,
-			  onOperation: (message, params, webSocket) => {
-				return { ...params, context }
-			  },
+				execute,
+				subscribe,
+				schema,
+				onOperation: (message, params, webSocket) => {
+					return { ...params, context }
+				},
 			},
 			{
-			  server,
-			  path: "/subscriptions"
+				server,
+				path: "/subscriptions"
 			}
 		);
+		logger.debug('Subscription server created');
 		logger.info('Apollon started', { port: PORT });
 
 
