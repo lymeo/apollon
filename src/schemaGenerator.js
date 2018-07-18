@@ -1,8 +1,3 @@
-require('@babel/polyfill');
-require('@babel/register');
-require('@babel/plugin-proposal-pipeline-operator');
-require('babel-plugin-transform-function-bind');
-
 const fs = require("fs");
 const path = require("path");
 const schema = require("./schema");
