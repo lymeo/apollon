@@ -21,7 +21,7 @@ const formatError = require('./formatError');
 const connectors = requireDir('../connectors');
 
 const { makeExecutableSchema } = require('graphql-tools');
-const rawSchema = require('./schema');
+const rawSchema = requireDir('./schema');
 const schema = makeExecutableSchema(rawSchema);
 
 const corsConfig = require('../config/cors.json');
