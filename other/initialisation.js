@@ -1,3 +1,3 @@
-modules.export = async function(context, start) {
+module.exports = async function(context, start) {
 	start();
 };
