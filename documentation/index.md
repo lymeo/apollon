@@ -58,9 +58,3 @@ context.connectors.mysql
  ### The /other folder 
 
  This folder is meant for specific files and avoids leaving at the root of the project
-
- ### The /dao folder
-
- > This folder is an extra folder to explain the possibility of adding them but is not essential to apollon
- 
- You can create folders anywhere in the structure. And like the dao folder you can use them to keep your structure neet.
