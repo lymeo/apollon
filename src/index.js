@@ -7,7 +7,8 @@ const logger = require('./logger');
 
 const express = require('express');
 const { execute, subscribe } = require('graphql');
-const { graphqlExpress, graphiqlExpress } = require('apollo-server-express');
+const { graphqlExpress } = require('apollo-server-express');
+const expressPlayground = require('graphql-playground-middleware-express').default;
 const { createServer } = require('http');
 const cors = require('cors');
 const bodyParser = require('body-parser');
@@ -58,17 +59,16 @@ const start = async () => {
 	logger.debug('Authentication middleware generated');
 
 	if (process.argv[2] == 'dev' || process.env.NODE_ENV == 'dev') {
-		logger.debug('Starting the GraphIQL endpoint');
 		app.use(
-			'/graphiql',
+			'/playground',
 			cors(corsConfig),
 			bodyParser.json(),
-			graphiqlExpress({
-				endpointURL: config.endpoint || '/',
+			expressPlayground({
+				endpoint: config.endpoint || '/',
 				SubscriptionEndpoint: `ws://localhost:3000/subscriptions`
 			})
 		);
-		logger.info('Endpoint /graphiql is accessible');
+		logger.info('Endpoint /playground is accessible');
 	}
 
 	app.use(
@@ -100,7 +100,8 @@ const start = async () => {
 					logger: logger.child({ scope: 'userland' })
 				},
 				formatError,
-				schema
+				schema,
+				playground: true
 			};
 		})
 	);
