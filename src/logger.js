@@ -1,6 +1,7 @@
 const bunyan = require('bunyan');
 
-const level = process.env.LOG_LEVEL || 'info';
+const level =
+	process.env.LOG_LEVEL || (process.argv[2] == 'dev' || process.env.NODE_ENV == 'dev' ? 'debug' : false) || 'info';
 
 function requestSerializer(request) {
 	let tmp = bunyan.stdSerializers.req(request);
