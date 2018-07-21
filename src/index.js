@@ -12,8 +12,8 @@ const { createServer } = require('http');
 const cors = require('cors');
 const bodyParser = require('body-parser');
 const requireDir = require('require-dir');
-const { SubscriptionServer } = require("subscriptions-transport-ws");
-const { PubSub } = require("graphql-subscriptions");
+const { SubscriptionServer } = require('subscriptions-transport-ws');
+const { PubSub } = require('graphql-subscriptions');
 const pubsub = new PubSub();
 
 const authenticate = require('../other/authentication');
@@ -88,7 +88,7 @@ const start = async () => {
 				}
 			);
 		},
-		graphqlExpress(async (request, res) => {
+		graphqlExpress(async (request, response) => {
 			return {
 				context: {
 					connectors,
@@ -117,18 +117,16 @@ const start = async () => {
 				subscribe,
 				schema,
 				onOperation: (message, params, webSocket) => {
-					return { ...params, context }
-				},
+					return { ...params, context };
+				}
 			},
 			{
 				server,
-				path: "/subscriptions"
+				path: '/subscriptions'
 			}
 		);
 		logger.debug('Subscription server created');
 		logger.info('Apollon started', { port: PORT });
-
-
 	});
 };
 
