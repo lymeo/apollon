@@ -7,21 +7,23 @@ const logger = require('./logger');
 
 const express = require('express');
 const { execute, subscribe } = require('graphql');
-const { graphqlExpress, graphiqlExpress } = require('apollo-server-express');
+const { graphqlExpress } = require('apollo-server-express');
+const expressPlayground = require('graphql-playground-middleware-express').default;
 const { createServer } = require('http');
 const cors = require('cors');
 const bodyParser = require('body-parser');
 const requireDir = require('require-dir');
-const { SubscriptionServer } = require("subscriptions-transport-ws");
-const { PubSub } = require("graphql-subscriptions");
+const { SubscriptionServer } = require('subscriptions-transport-ws');
+const { PubSub } = require('graphql-subscriptions');
 const pubsub = new PubSub();
 
 const authenticate = require('../other/authentication');
+const init = require('../other/initialisation');
 const formatError = require('./formatError');
 const connectors = requireDir('../connectors');
 
 const { makeExecutableSchema } = require('graphql-tools');
-const rawSchema = require('./schema');
+const rawSchema = requireDir('./schema');
 const schema = makeExecutableSchema(rawSchema);
 
 const corsConfig = require('../config/cors.json');
@@ -57,79 +59,81 @@ const start = async () => {
 	let authenticateMid = authenticate(context);
 	logger.debug('Authentication middleware generated');
 
-	if (process.argv[2] == 'dev' || process.env.NODE_ENV == 'dev') {
-		logger.debug('Starting the GraphIQL endpoint');
+	async function boot() {
+		if (process.argv[2] == 'dev' || process.env.NODE_ENV == 'dev') {
+			app.use(
+				'/playground',
+				cors(corsConfig),
+				bodyParser.json(),
+				expressPlayground({
+					endpoint: config.endpoint || '/',
+					SubscriptionEndpoint: `ws://localhost:3000/subscriptions`
+				})
+			);
+			logger.info('Endpoint /playground is accessible');
+		}
+
 		app.use(
-			'/graphiql',
+			config.endpoint || '/',
 			cors(corsConfig),
 			bodyParser.json(),
-			graphiqlExpress({
-				endpointURL: config.endpoint || '/',
-				SubscriptionEndpoint: `ws://localhost:3000/subscriptions`
+			function(request, response, next) {
+				authenticateMid(
+					request,
+					() => {
+						logger.info({ request }, 'Authentication passed');
+						next();
+					},
+					() => {
+						logger.warn({ request }, 'Authentication rejected');
+						response.status(401).send();
+					}
+				);
+			},
+			graphqlExpress(async (request, response) => {
+				return {
+					context: {
+						connectors,
+						app,
+						request,
+						response,
+						config,
+						pubsub,
+						logger: logger.child({ scope: 'userland' })
+					},
+					formatError,
+					schema,
+					playground: true
+				};
 			})
 		);
-		logger.info('Endpoint /graphiql is accessible');
-	}
+		logger.debug('Initialised the main endpoint', { port: config.endpoint || '/' });
 
-	app.use(
-		config.endpoint || '/',
-		cors(corsConfig),
-		bodyParser.json(),
-		function(request, response, next) {
-			authenticateMid(
-				request,
-				() => {
-					logger.info({ request }, 'Authentication passed');
-					next();
+		const server = createServer(app);
+		const PORT = process.env.PORT || 3000;
+		logger.debug('Wrapping app in an HTTP server');
+
+		server.listen(PORT, () => {
+			SubscriptionServer.create(
+				{
+					execute,
+					subscribe,
+					schema,
+					onOperation: (message, params, webSocket) => {
+						return { ...params, context };
+					}
 				},
-				() => {
-					logger.warn({ request }, 'Authentication rejected');
-					response.status(401).send();
+				{
+					server,
+					path: '/subscriptions'
 				}
 			);
-		},
-		graphqlExpress(async (request, response) => {
-			return {
-				context: {
-					connectors,
-					app,
-					request,
-					response,
-					config,
-					pubsub,
-					logger: logger.child({ scope: 'userland' })
-				},
-				formatError,
-				schema
-			};
-		})
-	);
-	logger.debug('Initialised the main endpoint', { port: config.endpoint || '/' });
+			logger.debug('Subscription server created');
+			logger.info('Apollon started', { port: PORT });
+		});
+	}
 
-	const server = createServer(app);
-	const PORT = process.env.PORT || 3000;
-	logger.debug('Wrapping app in an HTTP server');
-
-	server.listen(PORT, () => {
-		SubscriptionServer.create(
-			{
-				execute,
-				subscribe,
-				schema,
-				onOperation: (message, params, webSocket) => {
-					return { ...params, context }
-				},
-			},
-			{
-				server,
-				path: "/subscriptions"
-			}
-		);
-		logger.debug('Subscription server created');
-		logger.info('Apollon started', { port: PORT });
-
-
-	});
+	init(context, boot);
 };
 
 start();
