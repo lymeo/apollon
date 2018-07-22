@@ -34,7 +34,7 @@ const start = async () => {
 
 	// Initialisation of the connectors
 	for (let connectorName in connectors) {
-		connectors[connectorName] = connectors[connectorName]();
+		connectors[connectorName] = connectors[connectorName].apply({ logger });
 	}
 
 	logger.debug('Waiting for connectors to initialize');
