@@ -6,7 +6,7 @@
 	"scripts": {
 		"start": "node src/index.js prod",
 		"dev": "node src/index.js dev",
-		"nodemon": "./node_modules/nodemon/bin/nodemon.js src/index.js dev",
+		"nodemon": "./node_modules/nodemon/bin/nodemon.js -e js,json,gql src/index.js dev",
 		"schema": "node src/schemaGenerator.js",
 		"test": "echo \"Error: no test specified\" && exit 1"
 	},
