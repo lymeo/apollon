@@ -61,8 +61,6 @@ And will find the resulting file in a new root `dist`  directory.
 
 ## The resolvers
 
-> You can access the context object in most scopes in apollon. It contains usefull elements to access global objects.
-
 Resolvers are implemented in the resolver directory and are defined in an exported javascript function:
 
 ```javascript
@@ -115,6 +113,20 @@ module.exports = function(schema, helpers) {
 
     new helpers.SimpleSubscription("comment_deleted");
 };
+```
+Each resolver is passed in 3 parameters: the root object, the parameters and the context
+
+> You can access the context object in most scopes in apollon. It contains usefull elements to access global objects.
+ 
+```javascript
+Query.comments = (root, parameters, context) => {
+    return context.connectors.local.comments;
+}
+
+// Is the same as
+Query.comments = (root, _, {connectors: { local }}) => {
+    return local.comments;
+}
 ```
 
 ## The connectors
@@ -172,7 +184,7 @@ module.exports = async function() {
   };
 ```
 
-> This could have exported any other king of data source for example a MySql connection or a Mongoose client
+> This could have exported any other kind of data source for example a MySql connection or a Mongoose client
 
 ## The src root directory
 
