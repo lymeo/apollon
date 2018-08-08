@@ -69,7 +69,7 @@ module.exports = function(schema, helpers) {
 };
 ```
 
-Apollon passes into this function the current schema implementation and and object containing helpers.
+Apollon passes into this function the current schema implementation and an object containing helpers.
 
 The schema implementation contains three keys that are used to implement the specification schema.
 
@@ -186,9 +186,59 @@ module.exports = async function() {
 
 > This could have exported any other kind of data source for example a MySql connection or a Mongoose client
 
+> The connectors do not natively have access to the **context** because they are called before apollon has fully initialized **but the logger is binded to the scope under the ```this.logger``` key**.  
+
+## The helpers
+
+The helpers is an object accessible in the resolvers and passed in as the second parameter of the exported asynchronous function:
+
+
+```javascript
+module.exports = function(schema, HELPERS) {
+};
+
+```
+
+It contains multiple usefull tools
+
+### FS helper
+
+```javascript
+helpers.fs
+```
+
+> Apollon supports natively file uploading and provides an out of the box ```Upload``` type. 
+
+The FS helper contains for the moments just one method for saving files to the file system. Here is an example:
+
+```javascript 
+module.exports = function({Mutation}, {fs:{storeFileOnFs}}) {
+    Mutation.upload = async (obj, {file, path}) => {
+        // file parameter is actually a Promise so let's await it
+        let { stream, filename, mimetype, encoding } = await file
+
+        // Now that we have the file stream save to the disk unsing the helper
+        storeFileOnFs(stream, "uploads/" + path)
+
+        // resolve some info for the request
+        return { filename, mimetype, encoding };
+    }
+};
+```
+
+```helpers.fs.storeFileOnFs``` takes two parameters: the file stream to pipe to fs; and the destination path
+
+### Subscription helper
+
+The subsription helper can be used to create simple subscriptions 
+
+... MORE INFO IS COMMING ...
+
+... Please refer to the demo project that has a working implementation of this helper ...
+
 ## The src root directory
 
-This directory contains apollon's code. Nothing magic a simple express server with the different middleware feel free to change whatever you want or to make a PR if a feature seems interesting.
+This directory contains apollon's code. Nothing magic, just a simple express server with the different middleware feel free to change whatever you want or to make a PR if a feature seems interesting.
 
 ## Demo
 
