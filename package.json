@@ -37,6 +37,7 @@
 		"@babel/preset-stage-0": "^7.0.0-beta.51",
 		"@babel/register": "^7.0.0-beta.51",
 		"apollo-server-express": "^1.3.6",
+		"apollo-upload-server": "^6.0.0-alpha.1",
 		"babel-plugin-transform-function-bind": "^6.22.0",
 		"bcrypt": "^3.0.0",
 		"body-parser": "^1.18.3",

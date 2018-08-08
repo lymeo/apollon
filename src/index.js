@@ -12,6 +12,9 @@ const expressPlayground = require('graphql-playground-middleware-express').defau
 const { createServer } = require('http');
 const cors = require('cors');
 const bodyParser = require('body-parser');
+const { apolloUploadExpress } = require('apollo-upload-server');
+
+
 const requireDir = require('require-dir');
 const { SubscriptionServer } = require('subscriptions-transport-ws');
 const { PubSub } = require('graphql-subscriptions');
@@ -58,13 +61,13 @@ const start = async () => {
 
 	let authenticateMid = authenticate(context);
 	logger.debug('Authentication middleware generated');
-
+	
 	async function boot() {
+		app.use(cors(corsConfig));
+
 		if (process.argv[2] == 'dev' || process.env.NODE_ENV == 'dev') {
 			app.use(
 				'/playground',
-				cors(corsConfig),
-				bodyParser.json(),
 				expressPlayground({
 					endpoint: config.endpoint || '/',
 					SubscriptionEndpoint: `ws://localhost:3000/subscriptions`
@@ -75,8 +78,8 @@ const start = async () => {
 
 		app.use(
 			config.endpoint || '/',
-			cors(corsConfig),
 			bodyParser.json(),
+			apolloUploadExpress(),
 			function(request, response, next) {
 				authenticateMid(
 					request,
