@@ -14,7 +14,7 @@ requireDir('../../resolvers', {
 	mapValue: function (value, baseName) {
 		logger.debug('Initiating resolvers', baseName)
 		return value(schema, {
-
+			//Helpers
 			SimpleSubscription: function (sub) {
 				schema.Subscription[sub] = {
 					subscribe: (_, __, {
@@ -23,7 +23,8 @@ requireDir('../../resolvers', {
 						return pubsub.asyncIterator(sub);
 					}
 				}
-			}
+			},
+			fs: require("../helpers/fs")
 
 		});
 	}
