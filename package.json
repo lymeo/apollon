@@ -40,7 +40,6 @@
 		"apollo-upload-server": "^6.0.0-alpha.1",
 		"babel-plugin-transform-function-bind": "^6.22.0",
 		"body-parser": "^1.18.3",
-		"bunyan": "^1.8.12",
 		"callback-to-async-iterator": "^1.1.1",
 		"cors": "^2.8.4",
 		"express": "^4.16.3",
@@ -55,6 +54,7 @@
 	},
 	"devDependencies": {
 		"graphql-playground-middleware-express": "^1.7.2",
-		"nodemon": "^1.18.3"
+		"nodemon": "^1.18.3",
+		"bunyan": "^1.8.12"
 	}
 }
