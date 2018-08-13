@@ -53,8 +53,11 @@
 		"subscriptions-transport-ws": "^0.9.12"
 	},
 	"devDependencies": {
+		"bunyan": "^1.8.12",
+		"graphql-client": "^2.0.1",
 		"graphql-playground-middleware-express": "^1.7.2",
+		"jasmine-node": "^1.15.0",
 		"nodemon": "^1.18.3",
-		"bunyan": "^1.8.12"
+		"tape": "^4.9.1"
 	}
 }

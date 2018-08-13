@@ -33,6 +33,8 @@ const corsConfig = require('../config/cors.json');
 const config = require('../config/general.json');
 
 const start = async () => {
+	const PORT = process.env.PORT || 3000;
+
 	logger.info('Apollon initializing');
 
 	// Initialisation of the connectors
@@ -51,6 +53,8 @@ const start = async () => {
 	logger.debug('Express app started');
 
 	let context = {
+		PORT,
+		ENDPOINT: config.endpoint || '/',
 		connectors,
 		app,
 		config,
@@ -96,6 +100,8 @@ const start = async () => {
 			graphqlExpress(async (request, response) => {
 				return {
 					context: {
+						PORT,
+						ENDPOINT: config.endpoint || '/',
 						connectors,
 						app,
 						request,
@@ -110,11 +116,13 @@ const start = async () => {
 				};
 			})
 		);
-		logger.debug('Initialised the main endpoint', { port: config.endpoint || '/' });
+		logger.debug('Initialised the main endpoint', { endpoint: config.endpoint || '/' });
+
+		logger.debug('Wrapping app in an HTTP server');
 
 		const server = createServer(app);
-		const PORT = process.env.PORT || 3000;
-		logger.debug('Wrapping app in an HTTP server');
+
+		context.server = server;
 
 		server.listen(PORT, () => {
 			SubscriptionServer.create(
@@ -133,6 +141,9 @@ const start = async () => {
 			);
 			logger.debug('Subscription server created');
 			logger.info('Apollon started', { port: PORT });
+			if(process.argv[2] == 'test' || process.env.NODE_ENV == 'testing' || process.env.NODE_ENV == 'tests'){
+				require("./tests")(context)
+			}
 		});
 	}
 
