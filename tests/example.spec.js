@@ -1,12 +1,13 @@
 module.exports = async function(context, getClient, test){
     const client = getClient();
 
-    //takes the query as first argument and the variables as the second
+    let variables = {};
+
     let {data: {t}} = await client.query(`
 {
     t: test
 }
-    `)
+    `, variables);
 
     describe("A suite is just a function", function() {
         var a;
