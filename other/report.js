@@ -31,6 +31,10 @@ module.exports = async function(context, results) {
         stream.write(JSON.stringify(report));
         stream.end();
     });
+
+    if(report.quick.failed){
+        process.exit(1);
+    }
     
     
     context.server.close();
