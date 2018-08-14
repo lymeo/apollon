@@ -1,4 +1,5 @@
 # If you don't have any Query, comment all the file
 
-# type Query {
-# }
+type Query {
+    test: [Int]!
+}
