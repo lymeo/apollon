@@ -43,8 +43,15 @@ module.exports = async function tests(context){
 
     let testDirSpecs = [];
     
+    let rgx;
+    if(process.argv[3]){
+        rgx = new RegExp(process.argv[3]);
+    }
+
     for(let spec in testDir){
-        testDirSpecs.push(testDir[spec](context, getClient));
+        if(!rgx || (rgx && rgx.test(spec.toString()))){
+            testDirSpecs.push(testDir[spec](context, getClient));
+        }
     }
 
     await Promise.all(testDirSpecs)
