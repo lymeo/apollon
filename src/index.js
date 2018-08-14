@@ -141,7 +141,7 @@ const start = async () => {
 			);
 			logger.debug('Subscription server created');
 			logger.info('Apollon started', { port: PORT });
-			if(process.argv[2] == 'test' || process.env.NODE_ENV == 'testing' || process.env.NODE_ENV == 'tests'){
+			if(process.argv[2] == 'test' || process.env.NODE_ENV == 'test' || process.env.NODE_ENV == 'tests'){
 				require("./tests")(context)
 			}
 		});

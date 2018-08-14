@@ -3,12 +3,13 @@ module.exports = async function tests(context){
     const path = require("path");
     const jasmine = require('jasmine-node');
 
+    const hook = require("../other/report");
     const childLogger = context.logger.child({scope: "tests"});
     
     //Jasmine custom reporter
     const apollonReporter = {
         reportRunnerResults: function(results){
-            require("../other/report")(context, results)
+            hook(context, results)
         },
         reportRunnerStarting: () => {},
         reportSpecResults: function(result){
@@ -48,15 +49,21 @@ module.exports = async function tests(context){
         rgx = new RegExp(process.argv[3]);
     }
 
+    let match = false;
     for(let spec in testDir){
         if(!rgx || (rgx && rgx.test(spec.toString()))){
+            match = true;
             testDirSpecs.push(testDir[spec](context, getClient));
         }
     }
 
-    await Promise.all(testDirSpecs)
+    if(match){
+        await Promise.all(testDirSpecs)
+        var jasmineEnv = jasmine.getEnv();
+        jasmineEnv.reporter = apollonReporter;
+        jasmineEnv.execute();
+    } else {
+        hook(context, false);
+    }
 
-    var jasmineEnv = jasmine.getEnv();
-    jasmineEnv.reporter = apollonReporter;
-    jasmineEnv.execute();
 }

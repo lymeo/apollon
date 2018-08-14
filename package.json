@@ -8,7 +8,7 @@
 		"dev": "node src/index.js dev",
 		"nodemon": "nodemon -e js,json,gql src/index.js dev",
 		"schema": "node src/schemaGenerator.js",
-		"test": "echo \"Error: no test specified\" && exit 1"
+		"test": "node src/index.js test"
 	},
 	"keywords": [],
 	"author": "",
