@@ -75,7 +75,8 @@ const start = async () => {
 				expressPlayground({
 					endpoint: config.endpoint || '/',
 					SubscriptionEndpoint: `ws://localhost:3000/subscriptions`
-				})
+				}),
+				() => {}
 			);
 			logger.info('Endpoint /playground is accessible');
 		}
