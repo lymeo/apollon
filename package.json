@@ -1,6 +1,10 @@
 {
 	"name": "api_template",
-	"version": "1.0.0-alpha",
+<<<<<<< HEAD
+	"version": "1.0.0-rc1",
+=======
+	"version": "1.0.0",
+>>>>>>> release/1.0.0
 	"description": "",
 	"main": "index.js",
 	"scripts": {
