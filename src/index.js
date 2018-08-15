@@ -42,29 +42,35 @@ const start = async () => {
 		connectors[connectorName] = connectors[connectorName].apply({ logger });
 	}
 
-	logger.debug('Waiting for connectors to initialize');
+	logger.trace('Waiting for connectors to initialize');
 	// Waiting for them to be ready
 	for (let connectorName in connectors) {
 		connectors[connectorName] = await connectors[connectorName];
 	}
-	logger.debug('Connectors initialized');
+	logger.trace('Connectors initialized');
 
 	const app = express();
-	logger.debug('Express app started');
+	logger.trace('Express app started');
 
-	let context = {
+	let childLogger = logger.child({ scope: 'userland' });
+
+	// childLogger.domain = function(...args){
+	// 	childLogger.
+	// }
+
+	const context = {
 		PORT,
 		ENDPOINT: config.endpoint || '/',
 		connectors,
 		app,
 		config,
 		pubsub,
-		logger: logger.child({ scope: 'userland' })
+		logger: childLogger
 	};
-	logger.debug('Created context object');
+	logger.trace('Created context object');
 
 	let authenticateMid = authenticate(context);
-	logger.debug('Authentication middleware generated');
+	logger.trace('Authentication middleware generated');
 	
 	async function boot() {
 		app.use(cors(corsConfig));
@@ -109,7 +115,7 @@ const start = async () => {
 						response,
 						config,
 						pubsub,
-						logger: logger.child({ scope: 'userland' })
+						logger: childLogger
 					},
 					formatError,
 					schema,
@@ -117,9 +123,9 @@ const start = async () => {
 				};
 			})
 		);
-		logger.debug('Initialised the main endpoint', { endpoint: config.endpoint || '/' });
+		logger.trace('Initialised the main endpoint', { endpoint: config.endpoint || '/' });
 
-		logger.debug('Wrapping app in an HTTP server');
+		logger.trace('Wrapping app in an HTTP server');
 
 		const server = createServer(app);
 
@@ -140,7 +146,7 @@ const start = async () => {
 					path: '/subscriptions'
 				}
 			);
-			logger.debug('Subscription server created');
+			logger.trace('Subscription server created');
 			logger.info('Apollon started', { port: PORT });
 			if(process.argv[2] == 'test' || process.env.NODE_ENV == 'test' || process.env.NODE_ENV == 'tests'){
 				require("./tests")(context)

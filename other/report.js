@@ -34,9 +34,11 @@ module.exports = async function(context, results) {
             stream.end();
         });
     
-        if(report.quick.failed){
-            process.exit(1);
-        }    
+        stream.once("close", function(){
+            if(report.quick.failed){
+                process.exit(1);
+            }    
+        })
     }
 
     context.server.close();
