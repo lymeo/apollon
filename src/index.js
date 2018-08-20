@@ -22,7 +22,6 @@ const pubsub = new PubSub();
 
 const authenticate = require('../other/authentication');
 const init = require('../other/initialisation');
-const formatError = require('./formatError');
 const connectors = requireDir('../connectors');
 
 const { makeExecutableSchema } = require('graphql-tools');
