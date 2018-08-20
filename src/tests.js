@@ -2,6 +2,7 @@ module.exports = async function tests(context){
     const requireDir = require("require-dir");
     const path = require("path");
     const jasmine = require('jasmine-node');
+    const {promisify} = require('util');
 
     const hook = require("../other/report");
     const childLogger = context.logger.child({scope: "tests"});
@@ -36,6 +37,25 @@ module.exports = async function tests(context){
                 });
                 return getClient;
             };
+        }
+        if(!client.queryFromFile){
+            client.queryFromFile = function(path){
+                let query = "";
+                let q = promisify(fs.readFile)(path)
+                    .then(file => query = file);
+                ;
+                let variables = {};
+                let queryFromFileRoot = {
+                    send(){
+                        return q.then(_ => client.query(query, variables));
+                    },
+                    inject(data){
+                        variables = data;
+                        return queryFromFileRoot;
+                    }
+                }
+                return queryFromFileRoot;
+            }
         }
         return client;
     }
