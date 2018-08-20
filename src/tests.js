@@ -3,6 +3,7 @@ module.exports = async function tests(context){
     const path = require("path");
     const jasmine = require('jasmine-node');
     const {promisify} = require('util');
+    const fs = require('fs');
 
     const hook = require("../other/report");
     const childLogger = context.logger.child({scope: "tests"});
@@ -41,17 +42,15 @@ module.exports = async function tests(context){
         if(!client.queryFromFile){
             client.queryFromFile = function(path){
                 let query = "";
-                let q = promisify(fs.readFile)(path)
+                let q = promisify(fs.readFile)(path, 'utf8')
                     .then(file => query = file);
                 ;
-                let variables = {};
                 let queryFromFileRoot = {
                     send(){
-                        return q.then(_ => client.query(query, variables));
+                        return q.then(_ => client.query(query, {}));
                     },
-                    inject(data){
-                        variables = data;
-                        return queryFromFileRoot;
+                    injectAndSend(data){
+                        return q.then(_ => client.query(query, data));
                     }
                 }
                 return queryFromFileRoot;
