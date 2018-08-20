@@ -35,28 +35,19 @@ const config = require('../config/general.json');
 const start = async () => {
 	const PORT = process.env.PORT || 3000;
 
-	logger.info('Apollon initializing');
+	let childLogger = logger.child({ scope: 'userland' });
 
-	// Initialisation of the connectors
-	for (let connectorName in connectors) {
-		connectors[connectorName] = connectors[connectorName].apply({ logger, config });
+	childLogger.domain = function(obj, potMessage){
+		const domain = {scope: "domain"};
+		if(potMessage){
+			childLogger.info(Object.assign(obj,domain), potMessage)
+		} else {
+			childLogger.info(domain, obj);
+		}
 	}
-
-	logger.trace('Waiting for connectors to initialize');
-	// Waiting for them to be ready
-	for (let connectorName in connectors) {
-		connectors[connectorName] = await connectors[connectorName];
-	}
-	logger.trace('Connectors initialized');
 
 	const app = express();
 	logger.trace('Express app started');
-
-	let childLogger = logger.child({ scope: 'userland' });
-
-	// childLogger.domain = function(...args){
-	// 	childLogger.
-	// }
 
 	const context = {
 		PORT,
@@ -68,6 +59,20 @@ const start = async () => {
 		logger: childLogger
 	};
 	logger.trace('Created context object');
+
+	logger.info('Apollon initializing');
+
+	// Initialisation of the connectors
+	for (let connectorName in connectors) {
+		connectors[connectorName] = connectors[connectorName].apply(context);
+	}
+
+	logger.trace('Waiting for connectors to initialize');
+	// Waiting for them to be ready
+	for (let connectorName in connectors) {
+		connectors[connectorName] = await connectors[connectorName];
+	}
+	logger.trace('Connectors initialized');
 
 	let authenticateMid = authenticate(context);
 	logger.trace('Authentication middleware generated');
