@@ -122,7 +122,7 @@ const start = async () => {
 						pubsub,
 						logger: childLogger
 					},
-					formatError,
+					formatError: e => logger.error(e),
 					schema,
 					playground: true
 				};
