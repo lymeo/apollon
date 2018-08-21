@@ -8,6 +8,7 @@
 		"dev": "node src/index.js dev",
 		"nodemon": "nodemon -e js,json,gql src/index.js dev",
 		"schema": "node src/schemaGenerator.js",
+		"update": "node src/update",
 		"test": "node src/index.js test"
 	},
 	"keywords": [],
