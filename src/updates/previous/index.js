@@ -11,6 +11,7 @@ module.exports = async function(version, source){
         "./other/*": "./other/",
         "./directives/*": "./directives/",
         "./types/*": "./types/",
+        "./tests/*": "./tests/",
         "./connectors/*": "./connectors/"
     };
 
@@ -25,7 +26,7 @@ module.exports = async function(version, source){
     shell.rm(DEFAULT_FILES.map(e => path.join(__dirname, "../../../", e)));
 
     for (const spath in USERLAND_FILES) {
-        shell.cp(path.join(source, spath), path.join(__dirname, "../../../", USERLAND_FILES[spath]));
+        shell.cp("-r", path.join(source, spath), path.join(__dirname, "../../../", USERLAND_FILES[spath]));
     }
 
     console.log(await util.promisify(fs.readFile)(path.join(__dirname, "./release.md"), "utf8"))
