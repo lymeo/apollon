@@ -1,6 +1,6 @@
 {
 	"name": "api_template",
-	"version": "1.0.0",
+	"version": "1.1.0",
 	"description": "",
 	"main": "index.js",
 	"scripts": {
@@ -58,6 +58,7 @@
 		"graphql-playground-middleware-express": "^1.7.2",
 		"jasmine-node": "^1.15.0",
 		"nodemon": "^1.18.3",
+		"shelljs": "^0.8.2",
 		"tape": "^4.9.1"
 	}
 }
