@@ -1,7 +1,7 @@
 const shell = require('shelljs');
 const path = require('path');
 const util = require('util');
-const promisify = require('promisify');
+const fs = require('fs');
 
 module.exports = async function(version, source){
     const USERLAND_FILES = {
@@ -28,5 +28,5 @@ module.exports = async function(version, source){
         shell.cp(path.join(source, spath), path.join(__dirname, "../../../", USERLAND_FILES[spath]));
     }
 
-    console.log(await promisify(fs.readFile)(path.join(__dirname, "./release.md"))
+    console.log(await util.promisify(fs.readFile)(path.join(__dirname, "./release.md"), "utf8"))
 }
