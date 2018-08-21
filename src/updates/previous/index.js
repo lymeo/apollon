@@ -1,15 +1,16 @@
 const shell = require('shelljs');
+const path = require('path');
 
 module.exports = async function(version, source){
-    const USERLAND_FILES = [
-        "./schema/*",
-        "./config/*",
-        "./resolvers/*",
-        "./other/*",
-        "./directives/*",
-        "./types/*",
-        "./connectors/*"
-    ];
+    const USERLAND_FILES = {
+        "./config/*": "./config/",
+        "./schema/*": "./schema/",
+        "./resolvers/*": "./resolvers/",
+        "./other/*": "./other/",
+        "./directives/*": "./directives/",
+        "./types/*": "./types/",
+        "./connectors/*": "./connectors/"
+    };
 
     const DEFAULT_FILES = [
         "./resolvers/example.js",
@@ -21,7 +22,7 @@ module.exports = async function(version, source){
 
     shell.rm(DEFAULT_FILES.map(e => path.join(__dirname, "../../../", e)));
 
-    for (const ufpath of USERLAND_FILES) {
-        shell.cp(path.join(source, ufpath), path.join(__dirname, "../../../", ufpath));
+    for (const spath in USERLAND_FILES) {
+        shell.cp(path.join(source, spath), path.join(__dirname, "../../../", USERLAND_FILES[spath]));
     }
 }
