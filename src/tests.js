@@ -36,7 +36,7 @@ module.exports = async function tests(context){
                     url: `http://localhost:${context.PORT}${context.ENDPOINT}`,
                     headers
                 });
-                return getClient;
+                return getClient();
             };
         }
         if(!client.queryFromFile){
