@@ -1,7 +1,6 @@
 console.log("Preparing for update ...");
 const shell = require('shelljs');
 const path = require('path');
-const beautify = require('json-beautify');
 const {version} = require("../../package.json");
 
 let sourcePath = path.join(shell.pwd().toString(), process.argv[2]);
