@@ -1,8 +1,8 @@
 {
-	"name": "api_template",
+	"name": "@lymeodev/apollon",
 	"version": "1.1.0",
-	"description": "",
-	"main": "index.js",
+	"description": "Project apollon's goal is to simplify GraphQl API development and to offer a modulable structure to start building an API in minutes.",
+	"main": "src/index.js",
 	"scripts": {
 		"start": "node src/index.js prod",
 		"dev": "node src/index.js dev",
@@ -12,7 +12,7 @@
 		"test": "node src/index.js test"
 	},
 	"keywords": [],
-	"author": "",
+	"author": "lymeo",
 	"license": "ISC",
 	"dependencies": {
 		"@babel/cli": "^7.0.0-beta.51",
@@ -31,6 +31,7 @@
 		"@babel/plugin-proposal-optional-chaining": "^7.0.0-beta.55",
 		"@babel/plugin-proposal-pipeline-operator": "^7.0.0-beta.55",
 		"@babel/plugin-proposal-throw-expressions": "^7.0.0-beta.55",
+		"@babel/plugin-proposal-object-rest-spread": "7.2.0",
 		"@babel/plugin-syntax-dynamic-import": "^7.0.0-beta.55",
 		"@babel/plugin-syntax-import-meta": "^7.0.0-beta.55",
 		"@babel/polyfill": "^7.0.0-beta.51",
