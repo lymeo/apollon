@@ -21,7 +21,7 @@ class TriggerDirective extends SchemaDirectiveVisitor {
 
         field.resolve = async function(root, params, context) {
 
-            let resolverResult = await this::resolve(root, params, context); 
+            let resolverResult = await resolve.call(this, root, params, context); 
 
             if (subName && subName != '') {
                 const {pubsub} = context

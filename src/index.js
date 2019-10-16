@@ -161,4 +161,6 @@ const start = async () => {
 	init(context, boot);
 };
 
-start();
+module.exports = {
+	start
+};
