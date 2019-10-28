@@ -41,7 +41,7 @@ const pubsub = new PubSub();
 
 const authenticate = require('../other/authentication');
 const init = require('../other/initialisation');
-const connectors = requireDir('../connectors');
+// const connectors = requireDir('../connectors');
 
 const { makeExecutableSchema } = require('graphql-tools');
 
@@ -75,6 +75,8 @@ const start = async (p_config) => {
 	const app = express();
 	logger.trace('Express app started');
 
+	let connectors = glob.sync(config.source.connectors).map(filepath => require(filepath));
+	
 	const context = {
 		PORT,
 		ENDPOINT: config.endpoint || '/',
