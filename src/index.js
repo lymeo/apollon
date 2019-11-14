@@ -3,6 +3,25 @@ require('@babel/register');
 require('@babel/plugin-proposal-pipeline-operator');
 require('babel-plugin-transform-function-bind');
 
+let config = {
+	"port": 3000,
+	"root": __dirname.replace("src",""),
+	"plugins": [
+	]
+}
+
+config.source = {
+	"resolvers": config.root + "resolvers/*",
+	"connectors": config.root + "connectors/*",
+	"directives": config.root + "directives/*",
+	"types": config.root + "types/*",
+	"schema": config.root + "schema/*"
+}
+
+const defaultConfig = Object.assign({}, config);
+
+
+const glob = require("glob");
 const logger = require('./logger');
 
 const express = require('express');
@@ -22,21 +41,29 @@ const pubsub = new PubSub();
 
 const authenticate = require('../other/authentication');
 const init = require('../other/initialisation');
-const connectors = requireDir('../connectors');
+// const connectors = requireDir('../connectors');
 
 const { makeExecutableSchema } = require('graphql-tools');
-const rawSchema = requireDir('./schema');
-const schema = makeExecutableSchema(rawSchema);
 
 const corsConfig = require('../config/cors.json');
-const config = require('../config/general.json');
+// const config = require('../config/general.json');
 
-const start = async () => {
-	const PORT = process.env.PORT || 3000;
+
+
+
+const start = async (p_config) => {
+
+	config = Object.assign({}, config, p_config);
+
+	let rawSchema = require("./schemaBuilder")(config);
+	const schema = makeExecutableSchema(rawSchema);
+
+
+	const PORT = config.port || process.env.PORT || 3000;
 
 	let childLogger = logger.child({ scope: 'userland' });
 
-	childLogger.domain = function(obj, potMessage){
+	childLogger.domain = function(obj, potMessage) {
 		const domain = {scope: "domain"};
 		if(potMessage){
 			childLogger.info(Object.assign(obj,domain), potMessage)
@@ -48,6 +75,8 @@ const start = async () => {
 	const app = express();
 	logger.trace('Express app started');
 
+	let connectors = glob.sync(config.source.connectors).map(filepath => require(filepath));
+	
 	const context = {
 		PORT,
 		ENDPOINT: config.endpoint || '/',
@@ -162,5 +191,11 @@ const start = async () => {
 };
 
 module.exports = {
-	start
+	start,
+	
+	// Configuration
+	setConfig(p_newConfig){
+		return Object.assign(config, p_newConfig || {});
+	},
+	config
 };
