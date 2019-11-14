@@ -14,11 +14,99 @@ module.exports = function(config) {
 
   logger.trace("Created specification typeDefs schema");
 
-  let typeDefs = glob
-    .sync(config.source.schema)
-    .map(filepath => fs.readFileSync(filepath, { encoding: "utf8" }))
-    .join("\n");
+  let queryContents = [];
+  let mutationContents = [];
+  let subscriptionContents = [];
+  let otherContents = [];
+  // let queryReg = /type\s*[q|Q][u|U][e|E][r|R][y|Y]\s*{/g;
+  // let mutationReg = /type\s*[m|M][u|U][t|T][a|A][t|T][i|I][o|O][n|N]\s*{/g;
+  // let subscriptionReg = /type\s*[s|S][u|U][b|B][s|S][c|C][r|R][i|I][p|P][t|T][i|I][o|O][n|N]\s*{/g;
+  
+    // type\s*[q|Q][u|U][e|E][r|R][y|Y]\s*{
+  // let getType = content => {
+  //   if(queryReg.test(content)) {
+  //   }else if(mutationReg.test(content)){
+  //   }else if(subscriptionReg.test(content)){
+  //   }
+  //   return '_';
 
+  // }
+
+  // let getFormatedContent = (content, type) => {
+  //   if(type == 'query' || (!type && queryReg.test(content))) {
+  //     return content.replace(queryReg, '').replace('}', '');
+  //   }else if(type == 'mutation' || (!type && mutationReg.test(content))){
+  //     return content.replace(mutationReg, '').replace('}', '');
+  //   }else if(type == 'subscription' || (!type && subscriptionReg.test(content))){
+  //     return content.replace(subscriptionReg, '').replace('}', '');
+  //   }
+  //   return content;
+  // }
+  
+  glob
+    .sync(config.source.schema)
+    .forEach(filepath => {
+      let fileContent = fs.readFileSync(filepath, { encoding: "utf8" })
+      let formatedFilepath = filepath.toLowerCase();
+      // let type = getType(fileContent);
+      // let formatedContent = getFormatedContent(fileContent, type);
+      if(formatedFilepath.includes('query')){
+        queryContents.push(fileContent)
+      }else if(formatedFilepath.includes('mutation')){
+        mutationContents.push(fileContent)
+      }else if(formatedFilepath.includes('subscription')){
+        subscriptionContents.push(fileContent);
+      } else {
+
+        let currentType ='_';
+        fileContent.split('\n').map(e => e.trim()).filter(e => e.length).forEach(p_line => {
+          let line = p_line.toLowerCase();
+          if(line.includes('{') && ['query','mutation', 'subscription'].some(e => line.includes(e))){
+          
+            if(line.includes('query')){
+              currentType = 'query';
+            }else if(line.includes('mutation')){
+              currentType = 'mutation';
+  
+            }else if(line.includes('subscription')) {
+              currentType = 'subscription';
+            }
+          } else if(currentType != '_' && line.startsWith('}')){
+            currentType = "_";
+          } else {
+            if(currentType == 'query'){
+              queryContents.push(p_line)
+            } else if(currentType == 'mutation'){
+              mutationContents.push(p_line)
+            } else if(currentType == 'subscription'){
+              subscriptionContents.push(p_line);
+            } else {
+              otherContents.push(p_line);
+  
+            }
+          } 
+      })
+    }
+
+      // if(formatedFilepath.includes('query') || type == 'query'){
+      //   queryContents.push(formatedContent);
+      // }else if(formatedFilepath.includes('mutation') || type == 'mutation') {
+      //   mutationContents.push(formatedContent);
+      // }else if(formatedFilepath.includes('subscription') || type == 'subscription') {
+      //   subscriptionContents.push(formatedContent);
+      // } else {
+      //   otherContents.push(formatedContent);
+      // }
+    })
+
+    let typeDefs = [];
+
+    if(queryContents.length > 0) typeDefs.push('type Query {\n'+ queryContents.join('\n')+'\n}');
+    if(mutationContents.length > 0) typeDefs.push('type Mutation {\n'+ mutationContents.join('\n')+'\n}');
+    if(subscriptionContents.length > 0) typeDefs.push('type Subscription {\n'+ subscriptionContents.join('\n')+'\n}');
+    if(otherContents.length > 0) typeDefs.push('\n'+ otherContents.join('\n'));
+    typeDefs = typeDefs.join("\n");
+    
 
   logger.trace("Created the schema for the resolvers from the types file");
 
@@ -61,7 +149,6 @@ module.exports = function(config) {
     logger.trace("Removed the empty subscription field from executable schema");
   }
 
-  console.log("schema", schema)
 
   return {
     resolvers: schema,
