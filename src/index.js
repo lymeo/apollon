@@ -1,195 +1,214 @@
-require('@babel/polyfill');
-require('@babel/register');
-require('@babel/plugin-proposal-pipeline-operator');
-require('babel-plugin-transform-function-bind');
+require("@babel/polyfill");
+require("@babel/register");
+require("@babel/plugin-proposal-pipeline-operator");
+require("babel-plugin-transform-function-bind");
 
-let config = {
-	"port": 3000,
-	"root": __dirname.replace("node_modules/@lymeodev/apollon/src",""),
-	"plugins": [
-	]
-}
+const config = require("./config");
 
-config.source = {
-	"resolvers": config.root + "{resolvers/**/*.js,*.resolver.js,!(node_modules)/*.resolver.js,*.resolvers.js,!(node_modules)/*.resolvers.js}",
-	"connectors": config.root + "{connectors/**/*.js,*.connector.js,!(node_modules)/*.connector.js,*.connectors.js,!(node_modules)/*.connectors.js}",
-	"directives": config.root + "{directives/**/*.js,!(node_modules)/*.directive.js,*.directive.js,!(node_modules)/*.directives.js,*.directives.js}",
-	"types": config.root + "{types/**/*.js,!(node_modules)/*.type.js,*.type.js,!(node_modules)/*.types.js,*.types.js}",
-	"schema": config.root + "{*.gql, !(node_modules)/*.gql}"
-}
-// const defaultConfig = Object.assign({}, config);
-
+const logger = require("./logger");
+const { mergeDeep } = require("./helpers/deepMerge");
 
 const glob = require("glob");
-const logger = require('./logger');
-
-const express = require('express');
-const { execute, subscribe } = require('graphql');
-const { graphqlExpress } = require('apollo-server-express');
-const expressPlayground = require('graphql-playground-middleware-express').default;
-const { createServer } = require('http');
-const cors = require('cors');
-const bodyParser = require('body-parser');
-const { apolloUploadExpress } = require('apollo-upload-server');
-
-const { SubscriptionServer } = require('subscriptions-transport-ws');
-const { PubSub } = require('graphql-subscriptions');
+const path = require("path");
+const express = require("express");
+const { execute, subscribe } = require("graphql");
+const { graphqlExpress } = require("apollo-server-express");
+const { createServer } = require("http");
+const cors = require("cors");
+const bodyParser = require("body-parser");
+const { apolloUploadExpress } = require("apollo-upload-server");
+const { SubscriptionServer } = require("subscriptions-transport-ws");
+const { PubSub } = require("graphql-subscriptions");
 const pubsub = new PubSub();
 
-const authenticate = require('../other/authentication');
-const init = require('../other/initialisation');
+function setConfig(p_newConfig) {
+  return Object.assign(config, p_newConfig || {});
+}
 
-const { makeExecutableSchema } = require('graphql-tools');
+const start = async p_config => {
+  logger.info("Welcome to Apollon");
+  logger.info("Apollon will start initializing");
 
-const corsConfig = require('../config/cors.json');
-// const config = require('../config/general.json');
+  //Take into account post-start settings
+  mergeDeep(config, p_config);
 
-const start = async (p_config) => {
+  // Changing CWD to match potential root configuration
+  logger.debug(`- Defining project root => ${config.root}`);
+  process.chdir(config.root);
 
-	config = Object.assign({}, config, p_config);
+  // Set up the final config
+  logger.debug("- Preparing config");
+  const configs = glob.sync(config.sources.config).map(filepath => {
+    logger.debug(
+      {
+        filepath: path.join(process.cwd(), filepath)
+      },
+      `-- Importing config file`
+    );
+    return require(path.join(process.cwd(), filepath));
+  });
+  mergeDeep(config, ...configs);
 
-	let rawSchema = require("./schemaBuilder")(config);
-	const schema = makeExecutableSchema(rawSchema);
+  //Setting up child logger
+  logger.debug("- Setting up logging");
+  let childLogger = logger.child({ scope: "userland" });
+  childLogger.domain = function(obj, potMessage) {
+    const domain = { scope: "domain" };
+    if (potMessage) {
+      childLogger.info(Object.assign(obj, domain), potMessage);
+    } else {
+      childLogger.info(domain, obj);
+    }
+  };
 
+  // Setting up schema
+  logger.info("Building executable schema");
+  const schema = require("./schema")(config);
 
-	const PORT = config.port || process.env.PORT || 3000;
+  //Setting up underlying web server
+  logger.info("Setting up connectivity");
+  logger.debug("- Setting up underlying web server");
+  const PORT = config.port || process.env.PORT || 3000;
+  const app = express();
 
-	let childLogger = logger.child({ scope: 'userland' });
+  logger.debug("- Creating context object");
+  const context = {
+    PORT,
+    ENDPOINT: config.endpoint || "/",
+    app,
+    config,
+    pubsub,
+    logger: childLogger
+  };
 
-	childLogger.domain = function(obj, potMessage) {
-		const domain = {scope: "domain"};
-		if(potMessage){
-			childLogger.info(Object.assign(obj,domain), potMessage)
-		} else {
-			childLogger.info(domain, obj);
-		}
-	}
+  // Importing connectors
+  logger.debug("- Setting up Apollon connectors");
+  let connectors = glob.sync(config.sources.connectors).map(p_filepath => {
+    logger.debug({ filepath: p_filepath }, `-- Importing connector`);
+    return require(path.join(process.cwd(), p_filepath));
+  });
+  context.connectors = connectors;
 
-	const app = express();
-	logger.trace('Express app started');
+  //Initialization of connectors
+  logger.debug("- Initialisation of the connectors");
+  for (let connectorName in connectors) {
+    connectors[connectorName] = connectors[connectorName].apply(context);
+  }
+  logger.debug("-- Waiting for connectors to initialize");
+  for (let connectorName in connectors) {
+    connectors[connectorName] = await connectors[connectorName];
+  }
+  logger.debug("-- Connectors initialized");
 
-	let connectors = glob.sync(config.source.connectors).map(filepath => require(filepath));
-	
-	const context = {
-		PORT,
-		ENDPOINT: config.endpoint || '/',
-		connectors,
-		app,
-		config,
-		pubsub,
-		logger: childLogger
-	};
-	logger.trace('Created context object');
+  //Middleware
+  logger.debug("- Importing middlewares");
+  const middlewares = glob.sync(config.sources.middlewares).map(p_filepath => {
+    logger.debug({ filepath: p_filepath }, `-- Imported middleware`);
+    const implementation = require(path.join(process.cwd(), p_filepath))(
+      context
+    );
 
-	logger.info('Apollon initializing');
+    return function(request, response, next) {
+      implementation(
+        request,
+        message => {
+          logger.info({ request }, message);
+          next();
+        },
+        (code, message) => {
+          logger.warn({ request }, message);
+          response.status(code).send();
+        }
+      );
+    };
+  });
 
-	// Initialisation of the connectors
-	for (let connectorName in connectors) {
-		connectors[connectorName] = connectors[connectorName].apply(context);
-	}
+  async function boot() {
+    logger.info("Apollon is starting");
+    app.use(cors(config.cors));
 
-	logger.trace('Waiting for connectors to initialize');
-	// Waiting for them to be ready
-	for (let connectorName in connectors) {
-		connectors[connectorName] = await connectors[connectorName];
-	}
-	logger.trace('Connectors initialized');
+    if (process.argv[2] == "dev" || process.env.NODE_ENV == "dev") {
+      const expressPlayground = require("graphql-playground-middleware-express")
+        .default;
+      app.use(
+        "/playground",
+        expressPlayground({
+          endpoint: config.endpoint || "/",
+          SubscriptionEndpoint: `ws://localhost:3000/subscriptions`
+        }),
+        () => {}
+      );
+      logger.debug("- Endpoint /playground is accessible");
+    }
 
-	let authenticateMid = authenticate(context);
-	logger.trace('Authentication middleware generated');
-	
-	async function boot() {
-		app.use(cors(corsConfig));
+    app.use(
+      config.endpoint || "/",
+      bodyParser.json(),
+      apolloUploadExpress(),
+      ...middlewares,
+      graphqlExpress(async (request, response) => {
+        return {
+          context: {
+            PORT,
+            ENDPOINT: config.endpoint || "/",
+            connectors,
+            app,
+            request,
+            response,
+            config,
+            pubsub,
+            logger: childLogger
+          },
+          formatError: e => logger.error(e),
+          schema,
+          playground: true
+        };
+      })
+    );
+    logger.debug("- Initialised the main endpoint", {
+      endpoint: config.endpoint || "/"
+    });
 
-		if (process.argv[2] == 'dev' || process.env.NODE_ENV == 'dev') {
-			app.use(
-				'/playground',
-				expressPlayground({
-					endpoint: config.endpoint || '/',
-					SubscriptionEndpoint: `ws://localhost:3000/subscriptions`
-				}),
-				() => {}
-			);
-			logger.info('Endpoint /playground is accessible');
-		}
+    logger.debug("- Wrapping app in the underlying HTTP server");
 
-		app.use(
-			config.endpoint || '/',
-			bodyParser.json(),
-			apolloUploadExpress(),
-			function(request, response, next) {
-				authenticateMid(
-					request,
-					() => {
-						logger.info({ request }, 'Authentication passed');
-						next();
-					},
-					() => {
-						logger.warn({ request }, 'Authentication rejected');
-						response.status(401).send();
-					}
-				);
-			},
-			graphqlExpress(async (request, response) => {
-				return {
-					context: {
-						PORT,
-						ENDPOINT: config.endpoint || '/',
-						connectors,
-						app,
-						request,
-						response,
-						config,
-						pubsub,
-						logger: childLogger
-					},
-					formatError: e => logger.error(e),
-					schema,
-					playground: true
-				};
-			})
-		);
-		logger.trace('Initialised the main endpoint', { endpoint: config.endpoint || '/' });
+    const server = createServer(app);
 
-		logger.trace('Wrapping app in an HTTP server');
+    context.server = server;
 
-		const server = createServer(app);
+    server.listen(PORT, () => {
+      SubscriptionServer.create(
+        {
+          execute,
+          subscribe,
+          schema,
+          onOperation: (message, params, webSocket) => {
+            return { ...params, context };
+          }
+        },
+        {
+          server,
+          path: "/subscriptions"
+        }
+      );
+      logger.debug("- Subscription server created");
+      logger.info("- Apollon started", { port: PORT });
+      if (
+        process.argv[2] == "test" ||
+        process.env.NODE_ENV == "test" ||
+        process.env.NODE_ENV == "tests"
+      ) {
+        require("./tests")(context);
+      }
+    });
+  }
 
-		context.server = server;
-
-		server.listen(PORT, () => {
-			SubscriptionServer.create(
-				{
-					execute,
-					subscribe,
-					schema,
-					onOperation: (message, params, webSocket) => {
-						return { ...params, context };
-					}
-				},
-				{
-					server,
-					path: '/subscriptions'
-				}
-			);
-			logger.trace('Subscription server created');
-			logger.info('Apollon started', { port: PORT });
-			if(process.argv[2] == 'test' || process.env.NODE_ENV == 'test' || process.env.NODE_ENV == 'tests'){
-				require("./tests")(context)
-			}
-		});
-	}
-
-	init(context, boot);
+  config.initialisation(context, boot);
 };
 
-
 module.exports = {
-	start,
-	
-	// Configuration
-	setConfig(p_newConfig){
-		return Object.assign(config, p_newConfig || {});
-	},
-	config
+  start,
+
+  // Configuration
+  setConfig,
+  config
 };
