@@ -18,6 +18,7 @@ module.exports = function(config) {
   let mutationContents = [];
   let subscriptionContents = [];
   let otherContents = [];
+  
   // let queryReg = /type\s*[q|Q][u|U][e|E][r|R][y|Y]\s*{/g;
   // let mutationReg = /type\s*[m|M][u|U][t|T][a|A][t|T][i|I][o|O][n|N]\s*{/g;
   // let subscriptionReg = /type\s*[s|S][u|U][b|B][s|S][c|C][r|R][i|I][p|P][t|T][i|I][o|O][n|N]\s*{/g;
@@ -48,18 +49,16 @@ module.exports = function(config) {
     .forEach(filepath => {
       let fileContent = fs.readFileSync(filepath, { encoding: "utf8" })
       let formatedFilepath = filepath.toLowerCase();
-      // let type = getType(fileContent);
-      // let formatedContent = getFormatedContent(fileContent, type);
-      if(formatedFilepath.includes('query')){
+      if(formatedFilepath.includes('query') || formatedFilepath.includes('queries')){
         queryContents.push(fileContent)
-      }else if(formatedFilepath.includes('mutation')){
+      }else if(formatedFilepath.includes('mutation') || formatedFilepath.includes('mutations')){
         mutationContents.push(fileContent)
-      }else if(formatedFilepath.includes('subscription')){
+      }else if(formatedFilepath.includes('subscription') || formatedFilepath.includes('subscriptions')){
         subscriptionContents.push(fileContent);
       } else {
 
         let currentType ='_';
-        fileContent.split('\n').map(e => e.trim()).filter(e => e.length).forEach(p_line => {
+        fileContent.split('\n').map(e => e.trim()).filter(e => e.length && !e.startsWith('#')).forEach(p_line => {
           let line = p_line.toLowerCase();
           if(line.includes('{') && ['query','mutation', 'subscription'].some(e => line.includes(e))){
           
@@ -88,26 +87,16 @@ module.exports = function(config) {
       })
     }
 
-      // if(formatedFilepath.includes('query') || type == 'query'){
-      //   queryContents.push(formatedContent);
-      // }else if(formatedFilepath.includes('mutation') || type == 'mutation') {
-      //   mutationContents.push(formatedContent);
-      // }else if(formatedFilepath.includes('subscription') || type == 'subscription') {
-      //   subscriptionContents.push(formatedContent);
-      // } else {
-      //   otherContents.push(formatedContent);
-      // }
-    })
+  })
 
-    let typeDefs = [];
+  let typeDefs = [];
 
-    if(queryContents.length > 0) typeDefs.push('type Query {\n'+ queryContents.join('\n')+'\n}');
-    if(mutationContents.length > 0) typeDefs.push('type Mutation {\n'+ mutationContents.join('\n')+'\n}');
-    if(subscriptionContents.length > 0) typeDefs.push('type Subscription {\n'+ subscriptionContents.join('\n')+'\n}');
-    if(otherContents.length > 0) typeDefs.push('\n'+ otherContents.join('\n'));
-    typeDefs = typeDefs.join("\n");
+  if(queryContents.length > 0) typeDefs.push('type Query {\n'+ queryContents.join('\n')+'\n}');
+  if(mutationContents.length > 0) typeDefs.push('type Mutation {\n'+ mutationContents.join('\n')+'\n}');
+  if(subscriptionContents.length > 0) typeDefs.push('type Subscription {\n'+ subscriptionContents.join('\n')+'\n}');
+  if(otherContents.length > 0) typeDefs.push('\n'+ otherContents.join('\n'));
+  typeDefs = typeDefs.join("\n");
     
-
   logger.trace("Created the schema for the resolvers from the types file");
 
   let schema = { Query: {}, Mutation: {}, Subscription: {} };

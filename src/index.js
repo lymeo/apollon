@@ -5,20 +5,19 @@ require('babel-plugin-transform-function-bind');
 
 let config = {
 	"port": 3000,
-	"root": __dirname.replace("src",""),
+	"root": __dirname.replace("node_modules/@lymeodev/apollon/src",""),
 	"plugins": [
 	]
 }
 
 config.source = {
-	"resolvers": config.root + "resolvers/*",
-	"connectors": config.root + "connectors/*",
-	"directives": config.root + "directives/*",
-	"types": config.root + "types/*",
-	"schema": config.root + "schema/*"
+	"resolvers": config.root + "{resolvers/**/*.js,*.resolver.js,!(node_modules)/*.resolver.js,*.resolvers.js,!(node_modules)/*.resolvers.js}",
+	"connectors": config.root + "{connectors/**/*.js,*.connector.js,!(node_modules)/*.connector.js,*.connectors.js,!(node_modules)/*.connectors.js}",
+	"directives": config.root + "{directives/**/*.js,!(node_modules)/*.directive.js,*.directive.js,!(node_modules)/*.directives.js,*.directives.js}",
+	"types": config.root + "{types/**/*.js,!(node_modules)/*.type.js,*.type.js,!(node_modules)/*.types.js,*.types.js}",
+	"schema": config.root + "{*.gql, !(node_modules)/*.gql}"
 }
-
-const defaultConfig = Object.assign({}, config);
+// const defaultConfig = Object.assign({}, config);
 
 
 const glob = require("glob");
@@ -33,23 +32,17 @@ const cors = require('cors');
 const bodyParser = require('body-parser');
 const { apolloUploadExpress } = require('apollo-upload-server');
 
-
-const requireDir = require('require-dir');
 const { SubscriptionServer } = require('subscriptions-transport-ws');
 const { PubSub } = require('graphql-subscriptions');
 const pubsub = new PubSub();
 
 const authenticate = require('../other/authentication');
 const init = require('../other/initialisation');
-// const connectors = requireDir('../connectors');
 
 const { makeExecutableSchema } = require('graphql-tools');
 
 const corsConfig = require('../config/cors.json');
 // const config = require('../config/general.json');
-
-
-
 
 const start = async (p_config) => {
 
@@ -189,6 +182,7 @@ const start = async (p_config) => {
 
 	init(context, boot);
 };
+
 
 module.exports = {
 	start,
