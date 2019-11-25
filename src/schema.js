@@ -114,17 +114,8 @@ module.exports = function(config) {
   logger.debug(`- Delegating for resolver implementations`);
   glob.sync(config.sources.resolvers).forEach(p_filepath => {
     const filepath = path.join(process.cwd(), p_filepath);
-    require(filepath)(schema, {
-      //Helpers
-      SimpleSubscription: function(sub) {
-        schema.Subscription[sub] = {
-          subscribe: (_, __, { pubsub }) => {
-            return pubsub.asyncIterator(sub);
-          }
-        };
-      },
-      fs: require("./helpers/fs")
-    });
+    const helpers = require("./helpers")(schema, config);
+    require(filepath)(schema, helpers);
     logger.debug({ filepath: p_filepath }, `-- Delegated to`);
   });
 
