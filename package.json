@@ -1,6 +1,6 @@
 {
 	"name": "@lymeodev/apollon",
-	"version": "1.1.1",
+	"version": "1.1.5",
 	"description": "Project apollon's goal is to simplify GraphQl API development and to offer a modulable structure to start building an API in minutes.",
 	"main": "src/index.js",
 	"scripts": {
@@ -53,12 +53,12 @@
 		"http": "0.0.0",
 		"path": "^0.12.7",
 		"require-dir": "^1.0.0",
+		"bunyan": "^1.8.12",
+		"graphql-playground-middleware-express": "^1.7.2",
 		"subscriptions-transport-ws": "^0.9.12"
 	},
 	"devDependencies": {
-		"bunyan": "^1.8.12",
 		"graphql-client": "^2.0.1",
-		"graphql-playground-middleware-express": "^1.7.2",
 		"jasmine-node": "^1.15.0",
 		"nodemon": "^1.18.3",
 		"shelljs": "^0.8.2",
