@@ -39,12 +39,7 @@ const start = async p_config => {
   // Set up the final config
   logger.debug("- Preparing config");
   const configs = glob.sync(config.sources.config).map(filepath => {
-    logger.debug(
-      {
-        filepath: path.join(process.cwd(), filepath)
-      },
-      `-- Importing config file`
-    );
+    logger.debug({ filepath }, `-- Importing config file`);
     return require(path.join(process.cwd(), filepath));
   });
   mergeDeep(config, ...configs);
