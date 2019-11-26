@@ -1,10 +1,10 @@
 const fs = require("fs");
 const path = require("path");
 const glob = require("glob");
-const logger = require("./logger");
+import logger from "./logger";
 const { makeExecutableSchema } = require("graphql-tools");
 
-module.exports = function(config) {
+export default function(config, hook) {
   logger.debug(`- Compiling directive implementations`);
   let schemaDirectives = {};
   glob.sync(config.sources.directives).forEach(p_filepath => {
@@ -135,9 +135,9 @@ module.exports = function(config) {
     );
   }
 
-  return makeExecutableSchema({
+  return (hook || makeExecutableSchema)({
     resolvers: schema,
     typeDefs,
     schemaDirectives
   });
-};
+}

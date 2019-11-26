@@ -17,7 +17,7 @@ const config = {
       "{types/**/*.js,!(node_modules)/*.type.js,*.type.js,!(node_modules)/*.types.js,*.types.js}",
     schema: "{*.gql, !(node_modules)/*.gql}",
     config:
-      "{config.js,config.json,*.config.js,*.config.json,config/*.js,config/*.json,!(node_modules/**/*)}",
+      "{config.js,config.json,*.config.js,*.config.json,config/**/*.js,config/**/*.json,!(node_modules/**/*)}",
     middlewares: "{middlewares/**/*.js,!(node_modules/**/*)}"
   },
 
@@ -35,4 +35,4 @@ const config = {
   }
 };
 
-module.exports = config;
+export default config;

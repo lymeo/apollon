@@ -1,4 +1,4 @@
-const SimpleSubscription = require("./SimpleSubscription");
+const subscriptions = require("./subscriptions");
 const fs = require("./fs");
 
 module.exports = function(schema, config) {
