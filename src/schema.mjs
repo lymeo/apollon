@@ -8,9 +8,10 @@ import helperBootstrap from "./helpers/index";
 
 export default async function(config, hook) {
   logger.debug(`- Compiling directive implementations`);
+  const directivesFiles = glob.sync(config.sources.directives);
   let schemaDirectives = {};
   let schemaDirectiveAsyncBuffer = [];
-  glob.sync(config.sources.directives).forEach(p_filepath => {
+  directivesFiles.forEach(p_filepath => {
     let filename = p_filepath
       .split("/")
       .slice(-1)[0]
@@ -114,7 +115,9 @@ export default async function(config, hook) {
     "-- Added the Query, Mutation and Subscription to the executable schema"
   );
 
-  for (let filepath of glob.sync(config.sources.types)) {
+  const typeFiles = glob.sync(config.sources.types);
+
+  for (let filepath of typeFiles) {
     let type = (await import(filepath)).default;
     if (type && type.name) {
       schema[type.name] = type;
@@ -124,7 +127,8 @@ export default async function(config, hook) {
   //Setting up directives by forwarding schema so that each directive can add its own implementation
   logger.debug(`- Delegating for resolver implementations`);
   const helpers = helperBootstrap(schema, config);
-  for (let p_filepath of glob.sync(config.sources.resolvers)) {
+  const resolverFiles = glob.sync(config.sources.resolvers);
+  for (let p_filepath of resolverFiles) {
     const filepath = path.join(process.cwd(), p_filepath);
     (await import(filepath)).default(schema, helpers);
     logger.debug({ filepath: p_filepath }, `-- Delegated to`);
@@ -149,6 +153,9 @@ export default async function(config, hook) {
   return (hook || makeExecutableSchema)({
     resolvers: schema,
     typeDefs,
-    schemaDirectives
+    schemaDirectives,
+    resolverFiles,
+    typeFiles,
+    directivesFiles
   });
 }
