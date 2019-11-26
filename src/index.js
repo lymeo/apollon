@@ -1,10 +1,10 @@
+require = require("@std/esm")(module, { cjs: true, await: true });
 require("@babel/polyfill");
 require("@babel/register");
 require("@babel/plugin-proposal-pipeline-operator");
 require("babel-plugin-transform-function-bind");
-require = require("@std/esm")(module, { mode: "auto", cjs: true, await: true });
 
-const mod = process.env.BUILD ? "./build.mjs" : "./apollon.mjs";
+const mod = process.env.BUILD ? "./build.mjs" : "./server.mjs";
 const { start, setConfig, config } = require(mod);
 
 module.exports = {

@@ -1,25 +1,45 @@
 import logger from "./logger";
 import mergeDeep from "./helpers/deepMerge";
 
-const glob = require("glob");
-const path = require("path");
-const express = require("express");
-const { execute, subscribe } = require("graphql");
-const { graphqlExpress } = require("apollo-server-express");
-const { createServer } = require("http");
-const cors = require("cors");
-const bodyParser = require("body-parser");
-const { apolloUploadExpress } = require("apollo-upload-server");
-const { SubscriptionServer } = require("subscriptions-transport-ws");
-const { PubSub } = require("graphql-subscriptions");
+import glob from "glob";
+import path from "path";
+import express from "express";
+import { execute, subscribe } from "graphql";
+import cors from "cors";
+import bodyParser from "body-parser";
+import { apolloUploadExpress } from "apollo-upload-server";
+import expressPlayground from "graphql-playground-middleware-express";
+import { SubscriptionServer } from "subscriptions-transport-ws";
+
+// CJS compatibility
+import apollo_server_express from "apollo-server-express";
+const { graphqlExpress } = apollo_server_express;
+
+import http from "http";
+const { createServer } = http;
+
+import subscriptions from "graphql-subscriptions";
+const { PubSub } = subscriptions;
+
+//Initial config
+import config from "./config.mjs";
+
 const pubsub = new PubSub();
 
-const config = require("./config.mjs").default;
-
+// Scope exporting functions
 function setConfig(p_newConfig) {
   return mergeDeep(config, p_newConfig || {});
 }
 
+let initialisation = async function initialisation(context, start) {
+  return start();
+};
+
+function setInitilisation(p_newIniliser) {
+  initialisation = p_newIniliser;
+}
+
+// Bootstrapper function
 const start = async p_config => {
   logger.info("Welcome to Apollon");
   logger.info("Apollon will start initializing");
@@ -27,17 +47,17 @@ const start = async p_config => {
   //Take into account post-start settings
   mergeDeep(config, p_config);
 
-  // Changing CWD to match potential root configuration
-  logger.debug(`- Defining project root => ${config.root}`);
-
   // Set up the final config
   logger.debug("- Preparing config");
   const configs = glob.sync(config.sources.config).map(filepath => {
     logger.debug({ filepath }, `-- Importing config file`);
-    return require(path.join(process.cwd(), filepath));
+    return import(path.join(process.cwd(), filepath));
   });
-  mergeDeep(config, ...configs);
-  process.chdir(config.root);
+  mergeDeep(config, ...(await Promise.all(configs)).map(e => e.default));
+
+  // Changing CWD to match potential root configuration
+  logger.debug(`- Defining project root => ${config.root}`);
+  process.chdir(config.root.toString());
 
   //Setting up child logger
   logger.debug("- Setting up logging");
@@ -53,7 +73,7 @@ const start = async p_config => {
 
   // Setting up schema
   logger.info("Building executable schema");
-  const schema = (await import("./schema")).default(config);
+  const schema = await (await import("./schema")).default(config);
 
   //Setting up underlying web server
   logger.info("Setting up connectivity");
@@ -73,10 +93,12 @@ const start = async p_config => {
 
   // Importing connectors
   logger.debug("- Setting up Apollon connectors");
-  let connectors = glob.sync(config.sources.connectors).map(p_filepath => {
-    logger.debug({ filepath: p_filepath }, `-- Importing connector`);
-    return require(path.join(process.cwd(), p_filepath));
-  });
+  let connectors = (await Promise.all(
+    glob.sync(config.sources.connectors).map(p_filepath => {
+      logger.debug({ filepath: p_filepath }, `-- Importing connector`);
+      return import(path.join(process.cwd(), p_filepath));
+    })
+  )).map(implementation => implementation.default);
   context.connectors = connectors;
 
   //Initialization of connectors
@@ -92,14 +114,14 @@ const start = async p_config => {
 
   //Middleware
   logger.debug("- Importing middlewares");
-  const middlewares = glob.sync(config.sources.middlewares).map(p_filepath => {
-    logger.debug({ filepath: p_filepath }, `-- Imported middleware`);
-    const implementation = require(path.join(process.cwd(), p_filepath))(
-      context
-    );
-
+  const middlewares = (await Promise.all(
+    glob.sync(config.sources.middlewares).map(p_filepath => {
+      logger.debug({ filepath: p_filepath }, `-- Imported middleware`);
+      return import(path.join(process.cwd(), p_filepath))(context);
+    })
+  )).map(middlewareImpl => {
     return function(request, response, next) {
-      implementation(
+      middlewareImpl.default(
         request,
         message => {
           logger.info({ request }, message);
@@ -118,8 +140,6 @@ const start = async p_config => {
     app.use(cors(config.cors));
 
     if (process.argv[2] == "dev" || process.env.NODE_ENV == "dev") {
-      const expressPlayground = require("graphql-playground-middleware-express")
-        .default;
       app.use(
         "/playground",
         expressPlayground({
@@ -192,7 +212,7 @@ const start = async p_config => {
     });
   }
 
-  config.initialisation(context, boot);
+  await initialisation(context, boot);
 };
 
-export { start, setConfig };
+export { start, setConfig, setInitilisation };

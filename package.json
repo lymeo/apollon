@@ -48,6 +48,7 @@
     "callback-to-async-iterator": "^1.1.1",
     "cors": "^2.8.4",
     "escodegen": "^1.12.0",
+    "esm": "^3.2.25",
     "express": "^4.16.3",
     "fs": "0.0.1-security",
     "fs-extra": "^8.1.0",
@@ -69,5 +70,9 @@
     "nodemon": "^1.18.3",
     "shelljs": "^0.8.2",
     "tape": "^4.9.1"
+  },
+  "esm": {
+    "cjs": true,
+    "await": true
   }
 }

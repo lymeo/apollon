@@ -1,4 +1,4 @@
-const bunyan = require("bunyan");
+import bunyan from "bunyan";
 
 const level =
   process.env.LOG_LEVEL ||

@@ -1,24 +1,35 @@
-const fs = require("fs");
-const path = require("path");
-const glob = require("glob");
+import fs from "fs";
+import path from "path";
+import glob from "glob";
 import logger from "./logger";
-const { makeExecutableSchema } = require("graphql-tools");
+import { makeExecutableSchema } from "graphql-tools";
 
-export default function(config, hook) {
+import helperBootstrap from "./helpers/index";
+
+export default async function(config, hook) {
   logger.debug(`- Compiling directive implementations`);
   let schemaDirectives = {};
+  let schemaDirectiveAsyncBuffer = [];
   glob.sync(config.sources.directives).forEach(p_filepath => {
     let filename = p_filepath
       .split("/")
       .slice(-1)[0]
       .split(".")[0];
     const filepath = path.join(process.cwd(), p_filepath);
-    schemaDirectives[filename] = require(filepath);
+    schemaDirectiveAsyncBuffer.push({ filepath, impl: import(filepath) });
     logger.debug(
       { filepath: p_filepath },
       `-- Included directive implementation`
     );
   });
+
+  //wait for all async imports and map them to schemaDirectives variable
+  const directiveImplementations = await Promise.all(
+    schemaDirectiveAsyncBuffer.map(e => e.impl)
+  );
+  directiveImplementations.forEach(
+    (e, i) => (schemaDirectives[schemaDirectiveAsyncBuffer[i]] = e.default)
+  );
 
   logger.debug("- Building specification: full GraphQL schema");
 
@@ -103,21 +114,21 @@ export default function(config, hook) {
     "-- Added the Query, Mutation and Subscription to the executable schema"
   );
 
-  glob.sync(config.sources.types).forEach(filepath => {
-    let type = require(filepath);
+  for (let filepath of glob.sync(config.sources.types)) {
+    let type = (await import(filepath)).default;
     if (type && type.name) {
       schema[type.name] = type;
     }
-  });
+  }
 
   //Setting up directives by forwarding schema so that each directive can add its own implementation
   logger.debug(`- Delegating for resolver implementations`);
-  glob.sync(config.sources.resolvers).forEach(p_filepath => {
+  const helpers = helperBootstrap(schema, config);
+  for (let p_filepath of glob.sync(config.sources.resolvers)) {
     const filepath = path.join(process.cwd(), p_filepath);
-    const helpers = require("./helpers")(schema, config);
-    require(filepath)(schema, helpers);
+    (await import(filepath)).default(schema, helpers);
     logger.debug({ filepath: p_filepath }, `-- Delegated to`);
-  });
+  }
 
   logger.debug(`- Making executable`);
   if (Object.keys(schema.Query).length == 0) {

@@ -1,6 +1,6 @@
-let root = __dirname.replace("node_modules/@lymeodev/apollon/src", "");
+const root = __dirname.replace("node_modules/@lymeodev/apollon/src", "");
 
-const config = {
+export default {
   port: 3000,
   plugins: [],
   root,
@@ -8,17 +8,17 @@ const config = {
   //Glob patterns used as sources for the different files
   sources: {
     resolvers:
-      "{resolvers/**/*.js,*.resolver.js,resolver.js,!(node_modules)/*.resolver.js,*.resolvers.js,resolvers.js,!(node_modules)/*.resolvers.js}",
+      "{resolvers/**/*.js,*.resolver.js,resolver.js,*.resolvers.js,resolvers.js,resolvers/**/*.mjs,*.resolver.mjs,resolver.mjs,*.resolvers.mjs,resolvers.mjs,!(node_modules/**/**)}",
     connectors:
-      "{connectors/**/*.js,*.connector.js,!(node_modules)/*.connector.js,*.connectors.js,!(node_modules)/*.connectors.js}",
+      "{connectors/**/*.js,*.connector.js,,*.connectors.js,connectors/**/*.mjs,*.connector.mjs,,*.connectors.mjs,!(node_modules/**/**)}",
     directives:
-      "{directives/**/*.js,!(node_modules)/*.directive.js,*.directive.js,!(node_modules)/*.directives.js,*.directives.js}",
+      "{directives/**/*.js,*.directive.js*.directives.js,directives/**/*.mjs,*.directive.mjs*.directives.mjs,!(node_modules/**/**)}",
     types:
-      "{types/**/*.js,!(node_modules)/*.type.js,*.type.js,!(node_modules)/*.types.js,*.types.js}",
+      "{types/**/*.js,*.type.js,*.types.js,types/**/*.mjs,*.type.mjs,*.types.mjs,!(node_modules/**/**)}",
     schema: "{*.gql, !(node_modules)/*.gql}",
     config:
-      "{config.js,config.json,*.config.js,*.config.json,config/**/*.js,config/**/*.json,!(node_modules/**/*)}",
-    middlewares: "{middlewares/**/*.js,!(node_modules/**/*)}"
+      "{config.js,config.mjs,config.json,*.config.js,*.config.mjs,*.config.json,config/**/*.js,config/**/*.mjs,config/**/*.json,!(node_modules/**/**)}",
+    middlewares: "{middlewares/**/*.js,!(node_modules/**/**)}"
   },
 
   //Default CORS settings
@@ -27,12 +27,5 @@ const config = {
     methods: "GET,HEAD,PUT,PATCH,POST,DELETE",
     preflightContinue: false,
     optionsSuccessStatus: 204
-  },
-
-  //Default hooks
-  async initialisation(context, start) {
-    start();
   }
 };
-
-export default config;
