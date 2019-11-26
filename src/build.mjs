@@ -34,15 +34,17 @@ const start = async p_config => {
   logger.info("Apollon build process");
   logger.info("Apollon will start initializing");
 
-  //Uglify files and minify
-
-  process.exit();
-
   //Take into account post-start settings
   mergeDeep(config, p_config);
 
   // Changing CWD to match potential root configuration
   logger.debug(`- Defining project root => ${config.root}`);
+  process.chdir(config.root);
+
+  //Uglify files and minify
+  fse.ensureDir("./dist");
+
+  process.exit();
 
   // Set up the final config
   logger.debug("- Preparing config");
@@ -51,7 +53,6 @@ const start = async p_config => {
     return require(path.join(process.cwd(), filepath));
   });
   mergeDeep(config, ...configs);
-  process.chdir(config.root);
 
   //Setting up child logger
   logger.debug("- Setting up logging");
