@@ -123,45 +123,6 @@ const start = async p_config => {
       .sync(config.sources.schema)
       .map(filepath => fse.unlink(path.join("./dist/", filepath)))
   );
-
-  process.exit();
-
-  //Setting up underlying web server
-  logger.info("Setting up connectivity");
-  logger.debug("- Setting up underlying web server");
-  const PORT = config.port || process.env.PORT || 3000;
-  const app = express();
-
-  logger.debug("- Creating context object");
-  const context = {
-    PORT,
-    ENDPOINT: config.endpoint || "/",
-    app,
-    config,
-    pubsub,
-    logger: childLogger
-  };
-
-  // Importing connectors
-  logger.debug("- Setting up Apollon connectors");
-  let connectors = (await Promise.all(
-    glob.sync(config.sources.connectors).map(p_filepath => {
-      logger.debug({ filepath: p_filepath }, `-- Importing connector`);
-      return import(path.join(process.cwd(), p_filepath));
-    })
-  )).map(implementation => implementation.default);
-  context.connectors = connectors;
-
-  //Initialization of connectors
-  logger.debug("- Initialisation of the connectors");
-  for (let connectorName in connectors) {
-    connectors[connectorName] = connectors[connectorName].apply(context);
-  }
-  logger.debug("-- Waiting for connectors to initialize");
-  for (let connectorName in connectors) {
-    connectors[connectorName] = await connectors[connectorName];
-  }
-  logger.debug("-- Connectors initialized");
 };
 
 export { start, setConfig, setInitilisation };
