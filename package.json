@@ -67,9 +67,12 @@
   "devDependencies": {
     "graphql-client": "^2.0.1",
     "jasmine-node": "^1.15.0",
+    "node-minify": "^3.6.0",
     "nodemon": "^1.18.3",
     "shelljs": "^0.8.2",
-    "tape": "^4.9.1"
+    "tape": "^4.9.1",
+    "uglify-js": "^3.7.0",
+    "uglify-js-es6": "^2.8.9"
   },
   "esm": {
     "cjs": true,

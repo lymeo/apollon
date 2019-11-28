@@ -1,10 +1,7 @@
 import logger from "./logger";
 import mergeDeep from "./helpers/deepMerge";
 
-import fse from "fs-extra";
-
 import glob from "glob";
-import compressor from "uglify-js";
 import path from "path";
 import express from "express";
 import { execute, subscribe } from "graphql";
@@ -44,44 +41,23 @@ function setInitilisation(p_newIniliser) {
 
 // Bootstrapper function
 const start = async p_config => {
-  logger.info("Welcome to Apollon building process");
-  logger.info("Apollon will start building production ready");
-
-  // Changing CWD to match potential root configuration
-  logger.debug(`- Defining project root => ${config.root}`);
-  process.chdir(config.root.toString());
-
-  // Creating dist foleder
-  logger.debug(`Creating dist folder`);
-  await fse.remove("../.tmp.apollon.dist");
-  await fse.remove("./dist");
-  await fse.move("./node_modules", "../.tmp.apollon.node_modules");
-  await fse.copy("./", "../.tmp.apollon.dist");
-  const filePathsToMinify = glob.sync("{./**/**.*js,./**.*js}");
-  await fse.move("../.tmp.apollon.dist", "./dist");
-  const filesToMinify = await Promise.all(
-    filePathsToMinify.map(filepath => fse.readFile(filepath), "utf8")
-  );
-  await Promise.all(
-    filesToMinify
-      .map(file => compressor.minify(file))
-      .map((minified, index) =>
-        fse.outputFile(filePathsToMinify[index], minified, { encoding: "utf8" })
-      )
-  );
-  await fse.move("../.tmp.apollon.node_modules", "./node_modules");
+  logger.info("Welcome to Apollon");
+  logger.info("Apollon will start initializing");
 
   //Take into account post-start settings
   mergeDeep(config, p_config);
 
   // Set up the final config
-  logger.info("- Preparing config");
-  const configFiles = glob.sync(config.sources.config);
-  const configs = configFiles.map(filepath => {
+  logger.debug("- Preparing config");
+  const configs = glob.sync(config.sources.config).map(filepath => {
     logger.debug({ filepath }, `-- Importing config file`);
     return import(path.join(process.cwd(), filepath));
   });
   mergeDeep(config, ...(await Promise.all(configs)).map(e => e.default));
+
+  // Changing CWD to match potential root configuration
+  logger.debug(`- Defining project root => ${config.root}`);
+  process.chdir(config.root.toString());
 
   //Setting up child logger
   logger.debug("- Setting up logging");
@@ -96,47 +72,8 @@ const start = async p_config => {
   };
 
   // Setting up schema
-  logger.info("Building schema");
-  let dataFromSchema;
-  const schema = await (await import("./schema")).default(
-    config,
-    data => (dataFromSchema = data)
-  );
-
-  logger.info("- Outputting schemas");
-  await fse.outputFile("dist/schema.gql", dataFromSchema.typeDefs);
-  await fse.outputFile(
-    "dist/schema.mjs",
-    `export default \`${dataFromSchema.typeDefs}\``
-  );
-
-  logger.info("Preparing implementation dependencies");
-  config.$apollon_project_implementations = {
-    types: dataFromSchema.typeFiles,
-    directives: dataFromSchema.directivesFiles,
-    middlewares: glob.sync(config.sources.middlewares),
-    resolvers: dataFromSchema.resolverFiles,
-    connectors: glob.sync(config.sources.connectors)
-  };
-
-  logger.info("Writting config");
-  const confToWrite = Object.assign({}, config);
-  delete confToWrite.root;
-  delete confToWrite.sources;
-  await fse.outputFile("dist/config.json", JSON.stringify(confToWrite));
-
-  logger.info("Cleaning config files");
-  await Promise.all(
-    configFiles.map(filepath => fse.unlink(path.join("./dist/", filepath)))
-  );
-  logger.info("Cleaning schema files");
-  await Promise.all(
-    glob
-      .sync(config.sources.schema)
-      .map(filepath => fse.unlink(path.join("./dist/", filepath)))
-  );
-
-  process.exit();
+  logger.info("Building executable schema");
+  const schema = await (await import("./schema_develop")).default(config);
 
   //Setting up underlying web server
   logger.info("Setting up connectivity");
@@ -174,6 +111,99 @@ const start = async p_config => {
     connectors[connectorName] = await connectors[connectorName];
   }
   logger.debug("-- Connectors initialized");
+
+  //Middleware
+  logger.debug("- Importing middlewares");
+  const middlewares = (await Promise.all(
+    glob.sync(config.sources.middlewares).map(p_filepath => {
+      logger.debug({ filepath: p_filepath }, `-- Imported middleware`);
+      return import(path.join(process.cwd(), p_filepath))(context);
+    })
+  )).map(middlewareImpl => {
+    return function(request, response, next) {
+      middlewareImpl.default(
+        request,
+        message => {
+          logger.info({ request }, message);
+          next();
+        },
+        (code, message) => {
+          logger.warn({ request }, message);
+          response.status(code).send();
+        }
+      );
+    };
+  });
+
+  async function boot() {
+    logger.info("Apollon is starting");
+    app.use(cors(config.cors));
+
+    app.use(
+      "/playground",
+      expressPlayground({
+        endpoint: config.endpoint || "/",
+        SubscriptionEndpoint: `ws://localhost:3000/subscriptions`
+      }),
+      () => {}
+    );
+    logger.debug("- Endpoint /playground is accessible");
+
+    app.use(
+      config.endpoint || "/",
+      bodyParser.json(),
+      apolloUploadExpress(),
+      ...middlewares,
+      graphqlExpress(async (request, response) => {
+        return {
+          context: {
+            PORT,
+            ENDPOINT: config.endpoint || "/",
+            connectors,
+            app,
+            request,
+            response,
+            config,
+            pubsub,
+            logger: childLogger
+          },
+          formatError: e => logger.error(e),
+          schema,
+          playground: true
+        };
+      })
+    );
+    logger.debug("- Initialised the main endpoint", {
+      endpoint: config.endpoint || "/"
+    });
+
+    logger.debug("- Wrapping app in the underlying HTTP server");
+
+    const server = createServer(app);
+
+    context.server = server;
+
+    server.listen(PORT, () => {
+      SubscriptionServer.create(
+        {
+          execute,
+          subscribe,
+          schema,
+          onOperation: (message, params, webSocket) => {
+            return { ...params, context };
+          }
+        },
+        {
+          server,
+          path: "/subscriptions"
+        }
+      );
+      logger.debug("- Subscription server created");
+      logger.info("- Apollon started", { port: PORT });
+    });
+  }
+
+  await initialisation(context, boot);
 };
 
 export { start, setConfig, setInitilisation };

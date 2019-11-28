@@ -1,7 +1,6 @@
 import logger from "./logger";
 import mergeDeep from "./helpers/deepMerge";
 
-import glob from "glob";
 import path from "path";
 import express from "express";
 import { execute, subscribe } from "graphql";
@@ -44,16 +43,7 @@ const start = async p_config => {
   logger.info("Welcome to Apollon");
   logger.info("Apollon will start initializing");
 
-  //Take into account post-start settings
-  mergeDeep(config, p_config);
-
-  // Set up the final config
-  logger.debug("- Preparing config");
-  const configs = glob.sync(config.sources.config).map(filepath => {
-    logger.debug({ filepath }, `-- Importing config file`);
-    return import(path.join(process.cwd(), filepath));
-  });
-  mergeDeep(config, ...(await Promise.all(configs)).map(e => e.default));
+  config = rquire(path.join(config.root, "./config.json"));
 
   // Changing CWD to match potential root configuration
   logger.debug(`- Defining project root => ${config.root}`);
