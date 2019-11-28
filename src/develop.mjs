@@ -78,7 +78,11 @@ const start = async p_config => {
   //Setting up underlying web server
   logger.info("Setting up connectivity");
   logger.debug("- Setting up underlying web server");
+<<<<<<< HEAD
   const PORT = process.env.PORT || config.port || 3000;
+=======
+  const PORT = config.port || process.env.PORT || 3000;
+>>>>>>> c96b2d1621b4baeb271d139c7a77098ced301edc
   const app = express();
 
   logger.debug("- Creating context object");
@@ -117,11 +121,19 @@ const start = async p_config => {
   const middlewares = (await Promise.all(
     glob.sync(config.sources.middlewares).map(p_filepath => {
       logger.debug({ filepath: p_filepath }, `-- Imported middleware`);
+<<<<<<< HEAD
       return import(path.join(process.cwd(), p_filepath));
     })
   )).map(middlewareImpl => {
     return function(request, response, next) {
       middlewareImpl.default(context)(
+=======
+      return import(path.join(process.cwd(), p_filepath))(context);
+    })
+  )).map(middlewareImpl => {
+    return function(request, response, next) {
+      middlewareImpl.default(
+>>>>>>> c96b2d1621b4baeb271d139c7a77098ced301edc
         request,
         message => {
           logger.info({ request }, message);

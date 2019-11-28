@@ -18,8 +18,12 @@ export default {
     schema: "{*.gql, !(node_modules)/*.gql}",
     config:
       "{config.js,config.mjs,config.json,*.config.js,*.config.mjs,*.config.json,config/**/*.js,config/**/*.mjs,config/**/*.json,!(node_modules/**/**)}",
+<<<<<<< HEAD
     middlewares:
       "{middleware/**/*.js,middleware/**/*.mjs,*.mw.mjs,,*.mw.js,!(node_modules/**/**)}"
+=======
+    middlewares: "{middlewares/**/*.js,!(node_modules/**/**)}"
+>>>>>>> c96b2d1621b4baeb271d139c7a77098ced301edc
   },
 
   //Default CORS settings
