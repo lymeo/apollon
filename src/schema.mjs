@@ -1,14 +1,12 @@
-import fs from "fs";
 import path from "path";
-import glob from "glob";
 import logger from "./logger";
 import { makeExecutableSchema } from "graphql-tools";
 
 import helperBootstrap from "./helpers/index";
 
-export default async function(config, hook) {
+export default async function(config, project_root) {
   logger.debug(`- Compiling directive implementations`);
-  const directivesFiles = glob.sync(config.sources.directives);
+  const directivesFiles = config.$apollon_project_implementations.directives;
   let schemaDirectives = {};
   let schemaDirectiveAsyncBuffer = [];
   directivesFiles.forEach(p_filepath => {
@@ -40,73 +38,8 @@ export default async function(config, hook) {
   let otherContents = [];
 
   logger.debug(`-- Including specification files`);
-  glob.sync(config.sources.schema).forEach(filepath => {
-    logger.debug({ filepath }, `--- Included specification`);
-    let fileContent = fs.readFileSync(filepath, { encoding: "utf8" });
-    let formatedFilepath = filepath.toLowerCase();
-    if (
-      formatedFilepath.includes("query") ||
-      formatedFilepath.includes("queries")
-    ) {
-      queryContents.push(fileContent);
-    } else if (
-      formatedFilepath.includes("mutation") ||
-      formatedFilepath.includes("mutations")
-    ) {
-      mutationContents.push(fileContent);
-    } else if (
-      formatedFilepath.includes("subscription") ||
-      formatedFilepath.includes("subscriptions")
-    ) {
-      subscriptionContents.push(fileContent);
-    } else {
-      let currentType = "_";
-      fileContent
-        .split("\n")
-        .map(e => e.trim())
-        .filter(e => e.length && !e.startsWith("#"))
-        .forEach(p_line => {
-          let line = p_line.toLowerCase();
-          if (
-            line.includes("{") &&
-            ["query", "mutation", "subscription"].some(e => line.includes(e))
-          ) {
-            if (line.includes("query")) {
-              currentType = "query";
-            } else if (line.includes("mutation")) {
-              currentType = "mutation";
-            } else if (line.includes("subscription")) {
-              currentType = "subscription";
-            }
-          } else if (currentType != "_" && line.startsWith("}")) {
-            currentType = "_";
-          } else {
-            if (currentType == "query") {
-              queryContents.push(p_line);
-            } else if (currentType == "mutation") {
-              mutationContents.push(p_line);
-            } else if (currentType == "subscription") {
-              subscriptionContents.push(p_line);
-            } else {
-              otherContents.push(p_line);
-            }
-          }
-        });
-    }
-  });
 
-  let typeDefs = [];
-
-  if (queryContents.length > 0)
-    typeDefs.push("type Query {\n" + queryContents.join("\n") + "\n}");
-  if (mutationContents.length > 0)
-    typeDefs.push("type Mutation {\n" + mutationContents.join("\n") + "\n}");
-  if (subscriptionContents.length > 0)
-    typeDefs.push(
-      "type Subscription {\n" + subscriptionContents.join("\n") + "\n}"
-    );
-  if (otherContents.length > 0) typeDefs.push("\n" + otherContents.join("\n"));
-  typeDefs = typeDefs.join("\n");
+  let { default: typeDefs } = await import(path.join(project_root, "./schema"));
 
   logger.debug("-- Created the schema for the resolvers from the types file");
 
@@ -115,7 +48,7 @@ export default async function(config, hook) {
     "-- Added the Query, Mutation and Subscription to the executable schema"
   );
 
-  const typeFiles = glob.sync(config.sources.types);
+  const typeFiles = config.$apollon_project_implementations.types;
 
   for (let filepath of typeFiles) {
     let type = (await import(filepath)).default;
@@ -127,7 +60,7 @@ export default async function(config, hook) {
   //Setting up directives by forwarding schema so that each directive can add its own implementation
   logger.debug(`- Delegating for resolver implementations`);
   const helpers = helperBootstrap(schema, config);
-  const resolverFiles = glob.sync(config.sources.resolvers);
+  const resolverFiles = config.$apollon_project_implementations.resolvers;
   for (let p_filepath of resolverFiles) {
     const filepath = path.join(process.cwd(), p_filepath);
     (await import(filepath)).default(schema, helpers);
@@ -150,7 +83,7 @@ export default async function(config, hook) {
     );
   }
 
-  return (hook || makeExecutableSchema)({
+  return makeExecutableSchema({
     resolvers: schema,
     typeDefs,
     schemaDirectives,

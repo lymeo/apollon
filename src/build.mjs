@@ -4,7 +4,6 @@ import mergeDeep from "./helpers/deepMerge";
 import fse from "fs-extra";
 
 import glob from "glob";
-import compressor from "uglify-js";
 import path from "path";
 import express from "express";
 import { execute, subscribe } from "graphql";
@@ -57,18 +56,7 @@ const start = async p_config => {
   await fse.remove("./dist");
   await fse.move("./node_modules", "../.tmp.apollon.node_modules");
   await fse.copy("./", "../.tmp.apollon.dist");
-  const filePathsToMinify = glob.sync("{./**/**.*js,./**.*js}");
   await fse.move("../.tmp.apollon.dist", "./dist");
-  const filesToMinify = await Promise.all(
-    filePathsToMinify.map(filepath => fse.readFile(filepath), "utf8")
-  );
-  await Promise.all(
-    filesToMinify
-      .map(file => compressor.minify(file))
-      .map((minified, index) =>
-        fse.outputFile(filePathsToMinify[index], minified, { encoding: "utf8" })
-      )
-  );
   await fse.move("../.tmp.apollon.node_modules", "./node_modules");
 
   //Take into account post-start settings
@@ -98,7 +86,7 @@ const start = async p_config => {
   // Setting up schema
   logger.info("Building schema");
   let dataFromSchema;
-  const schema = await (await import("./schema")).default(
+  const schema = await (await import("./schema_develop")).default(
     config,
     data => (dataFromSchema = data)
   );

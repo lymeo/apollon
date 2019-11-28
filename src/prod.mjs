@@ -1,5 +1,4 @@
 import logger from "./logger";
-import mergeDeep from "./helpers/deepMerge";
 
 import path from "path";
 import express from "express";
@@ -7,7 +6,6 @@ import { execute, subscribe } from "graphql";
 import cors from "cors";
 import bodyParser from "body-parser";
 import { apolloUploadExpress } from "apollo-upload-server";
-import expressPlayground from "graphql-playground-middleware-express";
 import { SubscriptionServer } from "subscriptions-transport-ws";
 
 // CJS compatibility
@@ -20,14 +18,14 @@ const { createServer } = http;
 import subscriptions from "graphql-subscriptions";
 const { PubSub } = subscriptions;
 
-//Initial config
-import config from "./config.mjs";
-
 const pubsub = new PubSub();
+let project_root = "./";
 
 // Scope exporting functions
-function setConfig(p_newConfig) {
-  return mergeDeep(config, p_newConfig || {});
+function setConfig({ root }) {
+  if (root) {
+    project_root = root;
+  }
 }
 
 let initialisation = async function initialisation(context, start) {
@@ -40,14 +38,17 @@ function setInitilisation(p_newIniliser) {
 
 // Bootstrapper function
 const start = async p_config => {
+  if (p_config && p_config.root) {
+    project_root = p_config.root;
+  }
   logger.info("Welcome to Apollon");
   logger.info("Apollon will start initializing");
 
-  config = rquire(path.join(config.root, "./config.json"));
+  const config = await import(path.join(project_root, "./config"));
 
   // Changing CWD to match potential root configuration
-  logger.debug(`- Defining project root => ${config.root}`);
-  process.chdir(config.root.toString());
+  logger.debug(`- Defining project root => ${project_root}`);
+  process.chdir(project_root.toString());
 
   //Setting up child logger
   logger.debug("- Setting up logging");
@@ -63,7 +64,7 @@ const start = async p_config => {
 
   // Setting up schema
   logger.info("Building executable schema");
-  const schema = await (await import("./schema")).default(config);
+  const schema = await (await import("./schema")).default(config, project_root);
 
   //Setting up underlying web server
   logger.info("Setting up connectivity");
@@ -84,7 +85,7 @@ const start = async p_config => {
   // Importing connectors
   logger.debug("- Setting up Apollon connectors");
   let connectors = (await Promise.all(
-    glob.sync(config.sources.connectors).map(p_filepath => {
+    config.$apollon_project_implementations.connectors.map(p_filepath => {
       logger.debug({ filepath: p_filepath }, `-- Importing connector`);
       return import(path.join(process.cwd(), p_filepath));
     })
@@ -105,7 +106,7 @@ const start = async p_config => {
   //Middleware
   logger.debug("- Importing middlewares");
   const middlewares = (await Promise.all(
-    glob.sync(config.sources.middlewares).map(p_filepath => {
+    config.$apollon_project_implementations.middlewares.map(p_filepath => {
       logger.debug({ filepath: p_filepath }, `-- Imported middleware`);
       return import(path.join(process.cwd(), p_filepath))(context);
     })
@@ -128,18 +129,6 @@ const start = async p_config => {
   async function boot() {
     logger.info("Apollon is starting");
     app.use(cors(config.cors));
-
-    if (process.argv[2] == "dev" || process.env.NODE_ENV == "dev") {
-      app.use(
-        "/playground",
-        expressPlayground({
-          endpoint: config.endpoint || "/",
-          SubscriptionEndpoint: `ws://localhost:3000/subscriptions`
-        }),
-        () => {}
-      );
-      logger.debug("- Endpoint /playground is accessible");
-    }
 
     app.use(
       config.endpoint || "/",
