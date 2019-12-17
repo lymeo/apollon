@@ -1,9 +1,8 @@
-const root = __dirname.replace("node_modules/@lymeodev/apollon/src", "");
 
 export default {
   port: 3000,
   plugins: [],
-  root,
+  root: "./",
 
   //Glob patterns used as sources for the different files
   sources: {

@@ -1,19 +1,26 @@
-import logger from "./logger";
-import mergeDeep from "./helpers/deepMerge";
+import logger from "./logger.js";
+import mergeDeep from "./helpers/deepMerge.js";
 
 import glob from "glob";
 import path from "path";
 import express from "express";
-import { execute, subscribe } from "graphql";
 import cors from "cors";
 import bodyParser from "body-parser";
-import { apolloUploadExpress } from "apollo-upload-server";
 import expressPlayground from "graphql-playground-middleware-express";
-import { SubscriptionServer } from "subscriptions-transport-ws";
+
 
 // CJS compatibility
 import apollo_server_express from "apollo-server-express";
 const { graphqlExpress } = apollo_server_express;
+
+import uploadServer from "apollo-upload-server";
+const { apolloUploadExpress } = uploadServer;
+
+import subTransport from "subscriptions-transport-ws";
+const { SubscriptionServer } = subTransport;
+
+import graphql from "graphql";
+const { execute, subscribe } = graphql;
 
 import http from "http";
 const { createServer } = http;
@@ -22,7 +29,7 @@ import subscriptions from "graphql-subscriptions";
 const { PubSub } = subscriptions;
 
 //Initial config
-import config from "./config.mjs";
+import config from "./config.js";
 
 const pubsub = new PubSub();
 
@@ -73,7 +80,7 @@ const start = async p_config => {
 
   // Setting up schema
   logger.info("Building executable schema");
-  const schema = await (await import("./schema_develop")).default(config);
+  const schema = await (await import("./schema_develop.js")).default(config);
 
   //Setting up underlying web server
   logger.info("Setting up connectivity");
@@ -141,7 +148,7 @@ const start = async p_config => {
 
     app.use(
       "/playground",
-      expressPlayground({
+      expressPlayground.default({
         endpoint: config.endpoint || "/",
         SubscriptionEndpoint: `ws://localhost:3000/subscriptions`
       }),
@@ -206,4 +213,4 @@ const start = async p_config => {
   await initialisation(context, boot);
 };
 
-export { start, setConfig, setInitilisation };
+export default { start, setConfig, setInitilisation };

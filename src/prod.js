@@ -1,16 +1,22 @@
-import logger from "./logger";
+import logger from "./logger.js";
 
 import path from "path";
 import express from "express";
-import { execute, subscribe } from "graphql";
 import cors from "cors";
 import bodyParser from "body-parser";
-import { apolloUploadExpress } from "apollo-upload-server";
-import { SubscriptionServer } from "subscriptions-transport-ws";
 
 // CJS compatibility
 import apollo_server_express from "apollo-server-express";
 const { graphqlExpress } = apollo_server_express;
+
+import uploadServer from "apollo-upload-server";
+const { apolloUploadExpress } = uploadServer;
+
+import subTransport from "subscriptions-transport-ws";
+const { SubscriptionServer } = subTransport;
+
+import graphql from "graphql";
+const { execute, subscribe } = graphql;
 
 import http from "http";
 const { createServer } = http;
@@ -194,4 +200,4 @@ const start = async p_config => {
   await initialisation(context, boot);
 };
 
-export { start, setConfig, setInitilisation };
+export default { start, setConfig, setInitilisation };

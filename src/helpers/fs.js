@@ -1,6 +1,6 @@
-const fs = require("fs");
+import fs from "fs";
 
-module.exports = function() {
+export default function() {
   return {
     storeFileOnFs(stream, path) {
       return new Promise((resolve, reject) =>

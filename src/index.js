@@ -1,16 +1,15 @@
-require = require("@std/esm")(module, { cjs: true, await: true });
-require("@babel/polyfill");
-require("@babel/register");
-require("@babel/plugin-proposal-pipeline-operator");
-require("babel-plugin-transform-function-bind");
+import devEnv from "./develop.js"
+import buildEnv from "./build.js"
+import prodEnv from "./prod.js"
 
-const bootFiles = {
-  dev: "./develop.mjs",
-  develop: "./develop.mjs",
-  development: "./develop.mjs",
-  production: "./prod.mjs",
-  prod: "./prod.mjs",
-  build: "./build.mjs"
+
+const envDictionary = {
+  dev: "develop",
+  develop: "develop",
+  development: "develop",
+  production: "prod",
+  prod: "prod",
+  build: "build"
 };
 
 global.ENV = (
@@ -19,13 +18,13 @@ global.ENV = (
   "dev"
 ).toLowerCase();
 
-if (!bootFiles[global.ENV]) {
+if (!envDictionary[global.ENV]) {
   global.ENV = "dev";
 }
-const { start, setConfig, config } = require(bootFiles[global.ENV]);
+const { start, setConfig, config } = {
+    develop: devEnv, 
+    prod: prodEnv, 
+    build: buildEnv
+}[envDictionary[global.ENV]];
 
-module.exports = {
-  start,
-  setConfig,
-  config
-};
+export { start, setConfig, config }

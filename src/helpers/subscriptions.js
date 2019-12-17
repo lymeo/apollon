@@ -1,4 +1,4 @@
-module.exports = function(schema) {
+export default function(schema) {
   return {
     create(name) {
       schema.Subscription[name] = {
