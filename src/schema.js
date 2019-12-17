@@ -1,8 +1,9 @@
 import path from "path";
-import logger from "./logger";
-import { makeExecutableSchema } from "graphql-tools";
+import logger from "./logger.js";
+import GraphQlTools from "graphql-tools";
+const { makeExecutableSchema } = GraphQlTools;
 
-import helperBootstrap from "./helpers/index";
+import helperBootstrap from "./helpers/index.js";
 
 export default async function(config, project_root) {
   logger.debug(`- Compiling directive implementations`);
@@ -39,7 +40,7 @@ export default async function(config, project_root) {
 
   logger.debug(`-- Including specification files`);
 
-  let { default: typeDefs } = await import(path.join(project_root, "./schema"));
+  let { default: typeDefs } = await import(path.join(project_root, "./schema.js"));
 
   logger.debug("-- Created the schema for the resolvers from the types file");
 

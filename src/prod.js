@@ -1,6 +1,7 @@
 import logger from "./logger.js";
 
 import path from "path";
+import fse from "fs-extra";
 import express from "express";
 import cors from "cors";
 import bodyParser from "body-parser";
@@ -50,7 +51,7 @@ const start = async p_config => {
   logger.info("Welcome to Apollon");
   logger.info("Apollon will start initializing");
 
-  const config = await import(path.join(project_root, "./config"));
+  const config = await fse.readJSON(path.join(project_root, "./config.json"));
 
   // Changing CWD to match potential root configuration
   logger.debug(`- Defining project root => ${project_root}`);
@@ -70,7 +71,7 @@ const start = async p_config => {
 
   // Setting up schema
   logger.info("Building executable schema");
-  const schema = await (await import("./schema")).default(config, project_root);
+  const schema = await (await import("./schema.js")).default(config, project_root);
 
   //Setting up underlying web server
   logger.info("Setting up connectivity");

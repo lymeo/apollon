@@ -79,7 +79,7 @@ const start = async p_config => {
   // Setting up schema
   logger.info("Building schema");
   let dataFromSchema;
-  const schema = await (await import("./schema_develop")).default(
+  const schema = await (await import("./schema_develop.js")).default(
     config,
     data => (dataFromSchema = data)
   );
@@ -87,7 +87,7 @@ const start = async p_config => {
   logger.info("- Outputting schemas");
   await fse.outputFile("dist/schema.gql", dataFromSchema.typeDefs);
   await fse.outputFile(
-    "dist/schema.mjs",
+    "dist/schema.js",
     `export default \`${dataFromSchema.typeDefs}\``
   );
 
