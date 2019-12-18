@@ -8,7 +8,7 @@ import cors from "cors";
 import bodyParser from "body-parser";
 import expressPlayground from "graphql-playground-middleware-express";
 import fse from "fs-extra";
-import yaml from "yaml";
+import yaml from "js-yaml";
 
 // CJS compatibility
 import apollo_server_express from "apollo-server-express";
@@ -69,7 +69,7 @@ const start = async p_config => {
 
   config.apollon = config.apollon || {};
   if(await fse.exists("./.apollon.yaml")){
-    Object.assign(config.apollon, yaml.parse(await fse.readFile("./.apollon.yaml", "utf8")));
+    Object.assign(config.apollon, yaml.safeLoad(await fse.readFile("./.apollon.yaml", "utf8")));
   }
 
   //Setting up child logger
