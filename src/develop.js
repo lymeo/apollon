@@ -87,7 +87,6 @@ const start = async p_config => {
   //Manage plugins
   let plugins = {};
   let plugin_middlewares = [];
-  let plugin_connectors = [];
   if(config.apollon.plugins){
     logger.info("Loading plugins");
     for(const plugin in config.apollon.plugins){
@@ -100,7 +99,6 @@ const start = async p_config => {
         plugins[config.apollon.plugins[plugin].alias.toString()] = plugins[plugin];
       }
       plugin_middlewares.push(...plugins[plugin].middleware);
-      plugin_connectors.push(...plugins[plugin].connectors);
     }
   }
 
@@ -138,6 +136,11 @@ const start = async p_config => {
   logger.debug("- Initialisation of the connectors");
   for (let connectorName in connectors) {
     connectors[connectorName] = connectors[connectorName].apply(context);
+  }
+  for(let pluginName in plugins) {
+    for(let connectorName in plugins[pluginName].connectors){
+      connectors[connectorName] = plugins[pluginName].connectors[connectorName].apply(context);
+    }
   }
   logger.debug("-- Waiting for connectors to initialize");
   for (let connectorName in connectors) {
