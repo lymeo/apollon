@@ -115,7 +115,7 @@ const start = async p_config => {
   
   // Setting up schema
   logger.info("Building executable schema");
-  const schema = await (await import("./schema_develop.js")).default.call(context, config);
+  const schema = await (await import("./schema.js")).default.call(context, config, project_root);
 
 
   // Importing connectors
