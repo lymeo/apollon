@@ -95,12 +95,11 @@ const start = async p_config => {
       plugins[plugin] = import(config.apollon.plugins[plugin].path || path.join(process.cwd(), "./node_modules/", plugin, "./index.js"));
     }
     for(const plugin in plugins){
-      plugins[plugin] = await plugins[plugin];
+      plugins[plugin] = await (await plugins[plugin]).default(config.apollon.plugins[plugin]);
       if(config.apollon.plugins[plugin].alias){
         plugins[config.apollon.plugins[plugin].alias.toString()] = plugins[plugin];
       }
       plugin_middlewares.push(...plugins[plugin].middleware);
-      console.log(plugin_middlewares, plugins[plugin].middleware)
       plugin_connectors.push(...plugins[plugin].connectors);
     }
   }
