@@ -98,13 +98,9 @@ const start = async p_config => {
       if(config.apollon.plugins[plugin].alias){
         plugins[config.apollon.plugins[plugin].alias.toString()] = plugins[plugin];
       }
-      plugin_middlewares.push(...plugins[plugin].middleware);
+      plugin_middlewares.push(...(plugins[plugin].middleware || []));
     }
   }
-
-  // Setting up schema
-  logger.info("Building executable schema");
-  const schema = await (await import("./schema_develop.js")).default(config);
 
   //Setting up underlying web server
   logger.info("Setting up connectivity");
@@ -119,8 +115,13 @@ const start = async p_config => {
     app,
     config,
     pubsub,
-    logger: childLogger
+    logger: childLogger,
+    plugins
   };
+
+  // Setting up schema
+  logger.info("Building executable schema");
+  const schema = await (await import("./schema_develop.js")).default.call(context, config);
 
   // Importing connectors
   logger.debug("- Setting up Apollon connectors");
@@ -138,8 +139,10 @@ const start = async p_config => {
     connectors[connectorName] = connectors[connectorName].apply(context);
   }
   for(let pluginName in plugins) {
-    for(let connectorName in plugins[pluginName].connectors){
-      connectors[(config.apollon.plugins[plugin].connector_prefix || "") + connectorName] = plugins[pluginName].connectors[connectorName].apply(context);
+    if(plugins[pluginName].connectors){
+      for(let connectorName in plugins[pluginName].connectors){
+        connectors[(config.apollon.plugins[pluginName].connector_prefix || "") + connectorName] = plugins[pluginName].connectors[connectorName].apply(context);
+      }
     }
   }
   logger.debug("-- Waiting for connectors to initialize");

@@ -127,7 +127,15 @@ export default async function(config, hook) {
 
   //Setting up directives by forwarding schema so that each directive can add its own implementation
   logger.debug(`- Delegating for resolver implementations`);
-  const helpers = helperBootstrap(schema, config);
+  let helpers = helperBootstrap(schema, config);
+  
+  for(let pluginName in this.plugins) {
+    if(this.plugins[pluginName].helpers){
+      helpers[pluginName] = await this.plugins[pluginName].helpers(schema, config)
+    }
+  }
+
+  
   const resolverFiles = glob.sync(config.sources.resolvers);
   for (let p_filepath of resolverFiles) {
     const filepath = path.join(process.cwd(), p_filepath);
