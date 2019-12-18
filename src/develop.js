@@ -7,7 +7,8 @@ import express from "express";
 import cors from "cors";
 import bodyParser from "body-parser";
 import expressPlayground from "graphql-playground-middleware-express";
-
+import fse from "fs-extra";
+import yaml from "yaml";
 
 // CJS compatibility
 import apollo_server_express from "apollo-server-express";
@@ -66,6 +67,11 @@ const start = async p_config => {
   logger.debug(`- Defining project root => ${config.root}`);
   process.chdir(config.root.toString());
 
+  config.apollon = config.apollon || {};
+  if(await fse.exists("./.apollon.yaml")){
+    Object.assign(config.apollon, yaml.parse(await fse.readFile("./.apollon.yaml", "utf8")));
+  }
+
   //Setting up child logger
   logger.debug("- Setting up logging");
   let childLogger = logger.child({ scope: "userland" });
@@ -77,6 +83,27 @@ const start = async p_config => {
       childLogger.info(domain, obj);
     }
   };
+
+  //Manage plugins
+  let plugins = {};
+  let plugin_middlewares = [];
+  let plugin_connectors = [];
+  if(config.apollon.plugins){
+    logger.info("Loading plugins");
+    for(const plugin in config.apollon.plugins){
+      logger.debug(`- Importing plugin ${config.apollon.plugins[plugin].path || path.join(process.cwd(), "./node_modules/", plugin, "./index.js")}`)
+      plugins[plugin] = import(config.apollon.plugins[plugin].path || path.join(process.cwd(), "./node_modules/", plugin, "./index.js"));
+    }
+    for(const plugin in plugins){
+      plugins[plugin] = await plugins[plugin];
+      if(config.apollon.plugins[plugin].alias){
+        plugins[config.apollon.plugins[plugin].alias.toString()] = plugins[plugin];
+      }
+      plugin_middlewares.push(...plugins[plugin].middleware);
+      console.log(plugin_middlewares, plugins[plugin].middleware)
+      plugin_connectors.push(...plugins[plugin].connectors);
+    }
+  }
 
   // Setting up schema
   logger.info("Building executable schema");
@@ -126,21 +153,14 @@ const start = async p_config => {
       logger.debug({ filepath: p_filepath }, `-- Imported middleware`);
       return import(path.join(process.cwd(), p_filepath));
     })
-  )).map(middlewareImpl => {
-    return function(request, response, next) {
-      middlewareImpl.default(context)(
-        request,
-        message => {
-          logger.info({ request }, message);
-          next();
-        },
-        (code, message) => {
-          logger.warn({ request }, message);
-          response.status(code).send();
-        }
-      );
-    };
-  });
+  ))
+    .map(e => e.default)
+    .concat(plugin_middlewares)
+    .map(middlewareImpl => {
+      return function(request, response, next) {
+        return middlewareImpl(context)(request, response, next);
+      };
+    });
 
   async function boot() {
     logger.info("Apollon is starting");

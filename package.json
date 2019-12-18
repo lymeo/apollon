@@ -35,7 +35,8 @@
     "npm": "^6.13.1",
     "path": "^0.12.7",
     "require-dir": "^1.0.0",
-    "subscriptions-transport-ws": "^0.9.12"
+    "subscriptions-transport-ws": "^0.9.12",
+    "yaml": "^1.7.2"
   },
   "devDependencies": {
     "graphql-client": "^2.0.1",
