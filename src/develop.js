@@ -139,7 +139,7 @@ const start = async p_config => {
   }
   for(let pluginName in plugins) {
     for(let connectorName in plugins[pluginName].connectors){
-      connectors[connectorName] = plugins[pluginName].connectors[connectorName].apply(context);
+      connectors[(config.apollon.plugins[plugin].connector_prefix || "") + connectorName] = plugins[pluginName].connectors[connectorName].apply(context);
     }
   }
   logger.debug("-- Waiting for connectors to initialize");
