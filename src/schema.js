@@ -28,8 +28,17 @@ export default async function(config, project_root) {
     schemaDirectiveAsyncBuffer.map(e => e.impl)
   );
   directiveImplementations.forEach(
-    (e, i) => (schemaDirectives[schemaDirectiveAsyncBuffer[i]] = e.default)
+    (e, i) => (schemaDirectives[schemaDirectiveAsyncBuffer[i].filepath] = e.default)
   );
+
+  // Manage plugins directives
+  for(let pluginName in this.plugins) {
+    if(this.plugins[pluginName].directives){
+      for(let directiveName in this.plugins[pluginName].directives){
+        schemaDirectives[directiveName] = this.plugins[pluginName].directives[directiveName];
+      }
+    }
+  }
 
   logger.debug("- Building specification: full GraphQL schema");
 
@@ -58,14 +67,39 @@ export default async function(config, project_root) {
     }
   }
 
+  //Manage types defined in plugins
+  for(let pluginName in this.plugins) {
+    if(this.plugins[pluginName].types){
+      for(let typeName in this.plugins[pluginName].types){
+        schema[typeName] = this.plugins[pluginName].types[typeName];
+      }
+    }
+  }
+
   //Setting up directives by forwarding schema so that each directive can add its own implementation
   logger.debug(`- Delegating for resolver implementations`);
-  const helpers = helperBootstrap(schema, config);
+  let helpers = helperBootstrap(schema, config);
+  
+  for(let pluginName in this.plugins) {
+    if(this.plugins[pluginName].helpers){
+      helpers[pluginName] = await this.plugins[pluginName].helpers(schema, config)
+    }
+  }
+
+  
   const resolverFiles = config.$apollon_project_implementations.resolvers;
   for (let p_filepath of resolverFiles) {
     const filepath = path.join(process.cwd(), p_filepath);
-    (await import(filepath)).default(schema, helpers);
+    await (await import(filepath)).default(schema, helpers);
     logger.debug({ filepath: p_filepath }, `-- Delegated to`);
+  }
+
+  //Manage resolvers in plugins
+  
+  for(let pluginName in this.plugins) {
+    if(this.plugins[pluginName].resolvers){
+      Promise.all(this.plugins[pluginName].resolvers.map(resolver => resolver(schema, helpers)))
+    }
   }
 
   logger.debug(`- Making executable`);

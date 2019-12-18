@@ -5,6 +5,7 @@ import fse from "fs-extra";
 
 import glob from "glob";
 import path from "path";
+import yaml from "js-yaml";
 
 // CJS compatibility
 import apollo_server_express from "apollo-server-express";
@@ -64,6 +65,11 @@ const start = async p_config => {
   });
   mergeDeep(config, ...(await Promise.all(configs)).map(e => e.default));
 
+  config.apollon = config.apollon || {};
+  if(await fse.exists("./.apollon.yaml")){
+    Object.assign(config.apollon, yaml.safeLoad(await fse.readFile("./.apollon.yaml", "utf8")));
+  }
+
   //Setting up child logger
   logger.debug("- Setting up logging");
   let childLogger = logger.child({ scope: "userland" });
@@ -76,10 +82,28 @@ const start = async p_config => {
     }
   };
 
+  //Manage plugins
+  let plugins = {};
+  let plugin_middlewares = [];
+  if(config.apollon.plugins){
+    logger.info("Loading plugins");
+    for(const plugin in config.apollon.plugins){
+      logger.debug(`- Importing plugin ${config.apollon.plugins[plugin].path || path.join(process.cwd(), "./node_modules/", plugin, "./index.js")}`)
+      plugins[plugin] = import(config.apollon.plugins[plugin].path || path.join(process.cwd(), "./node_modules/", plugin, "./index.js"));
+    }
+    for(const plugin in plugins){
+      plugins[plugin] = await (await plugins[plugin]).default(config.apollon.plugins[plugin]);
+      if(config.apollon.plugins[plugin].alias){
+        plugins[config.apollon.plugins[plugin].alias.toString()] = plugins[plugin];
+      }
+      plugin_middlewares.push(...(plugins[plugin].middleware || []));
+    }
+  }
+
   // Setting up schema
   logger.info("Building schema");
   let dataFromSchema;
-  const schema = await (await import("./schema_develop.js")).default(
+  const schema = await (await import("./schema_develop.js")).default.call({plugins},
     config,
     data => (dataFromSchema = data)
   );
