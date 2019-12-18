@@ -32,6 +32,7 @@
     "graphql-tools": "^3.0.4",
     "http": "0.0.0",
     "install": "^0.13.0",
+    "js-yaml": "^3.13.1",
     "npm": "^6.13.1",
     "path": "^0.12.7",
     "require-dir": "^1.0.0",
@@ -39,12 +40,8 @@
   },
   "devDependencies": {
     "graphql-client": "^2.0.1",
-    "jasmine-node": "^1.15.0",
-    "node-minify": "^3.6.0",
     "nodemon": "^1.18.3",
     "shelljs": "^0.8.2",
-    "tape": "^4.9.1",
-    "uglify-js": "^3.7.0",
-    "uglify-js-es6": "^2.8.9"
+    "tape": "^4.9.1"
   }
 }
