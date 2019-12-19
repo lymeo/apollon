@@ -1,17 +1,17 @@
 # Apollon: an Apollo/express based graphQl server
 
-## Getting started
+## Getting started (step by step)
 
-Add apollon to a new project
+Add Apollon to a new project
 
 ```bash
 npm init
 npm install @lymeodev/apollon@2.0.0-0
 ```
 
-> At this time apollon is still in prerelease before installing please check latest version available here https://www.npmjs.com/package/@lymeodev/apollon. The package is often updated.
+> At this time Apollon is still in prerelease before installing please check latest version available here https://www.npmjs.com/package/@lymeodev/apollon. The package is often updated.
 
-Apollon 2.0 uses native ESM and so to begin using Apollon you need to import it in your main file. You then need to tell Apollon where your project root is so apollon can automatically detect your files. The last step is to start Apollon. It is that easy!
+Apollon 2.0 uses native ESM and so to begin you need to import Apollon in your main file. You then need to tell Apollon where your project root is so it can automatically detect your files. The last step is to start Apollon. It is that easy!
 
 Here is an example:
 
@@ -44,3 +44,24 @@ export default async function({Query}){
 ```
 
 That's all folks you have a fully functionnal GraphQl API that can be tested at http://localhost:3000/playground
+
+## Getting started from template
+
+```shell
+git clone https://github.com/lymeo/apollon-template.git
+cd apollon-template
+npm i
+node index.js
+```
+
+## Files
+
+> Content comming soon
+
+## Plugins
+
+> Content comming soon
+
+## Building
+
+> Content comming soon
