@@ -1,4 +1,4 @@
-# Apollon: an Apollo/express based graphQl server
+# Apollon: an Apollo/Express based GraphQl server
 
 ## Getting started (step by step)
 
@@ -6,7 +6,7 @@ Add Apollon to a new project
 
 ```bash
 npm init
-npm install @lymeodev/apollon@2.0.0-0
+npm install @lymeodev/apollon@2.0.0-1
 ```
 
 > At this time Apollon is still in prerelease before installing please check latest version available here https://www.npmjs.com/package/@lymeodev/apollon. The package is often updated.
