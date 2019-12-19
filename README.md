@@ -13,7 +13,7 @@ Add Apollon to a new project
 
 ```bash
 npm init
-npm install @lymeodev/apollon@2.0.0-2
+npm install @lymeodev/apollon@2.0.0-3
 ```
 
 > At this time Apollon is still in prerelease before installing please check latest version available here https://www.npmjs.com/package/@lymeodev/apollon. The package is often updated.
