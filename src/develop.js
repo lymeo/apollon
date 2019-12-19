@@ -122,19 +122,23 @@ const start = async p_config => {
 
   // Importing connectors
   logger.debug("- Setting up Apollon connectors");
-  let connectors = (await Promise.all(
+  const connectorImports = (await Promise.all(
     glob.sync(config.sources.connectors).map(p_filepath => {
       logger.debug({ filepath: p_filepath }, `-- Importing connector`);
       return import(path.join(process.cwd(), p_filepath));
     })
   )).map(implementation => implementation.default);
-  context.connectors = connectors;
 
   //Initialization of connectors
   logger.debug("- Initialisation of the connectors");
-  for (let connectorName in connectors) {
-    connectors[connectorName] = connectors[connectorName].apply(context);
+  const connectors = {};
+  for (let connector of connectorImports) {
+    if(!connector.name) throw "No name defined for connector"
+    connectors[connector.name] = connector.apply(context);
+    console.log(connector.name, connectors[connector.name]);
   }
+
+  //Manage connectors from plugins
   for(let pluginName in plugins) {
     if(plugins[pluginName].connectors){
       for(let connectorName in plugins[pluginName].connectors){
@@ -142,6 +146,8 @@ const start = async p_config => {
       }
     }
   }
+  context.connectors = connectors;
+
   logger.debug("-- Waiting for connectors to initialize");
   for (let connectorName in connectors) {
     connectors[connectorName] = await connectors[connectorName];

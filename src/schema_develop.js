@@ -174,7 +174,7 @@ export default async function(config, hook) {
   const resolverFiles = glob.sync(config.sources.resolvers);
   for (let p_filepath of resolverFiles) {
     const filepath = path.join(process.cwd(), p_filepath);
-    await (await import(filepath)).default(schema, helpers);
+    await (await import(filepath)).default.call(schema, helpers);
     logger.debug({ filepath: p_filepath }, `-- Delegated to`);
   }
 
@@ -182,7 +182,7 @@ export default async function(config, hook) {
   
   for(let pluginName in this.plugins) {
     if(this.plugins[pluginName].resolvers){
-      Promise.all(this.plugins[pluginName].resolvers.map(resolver => resolver(schema, helpers)))
+      Promise.all(this.plugins[pluginName].resolvers.map(resolver => resolver.call(schema, helpers)))
     }
   }
 

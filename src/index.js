@@ -2,7 +2,6 @@ import devEnv from "./develop.js"
 import buildEnv from "./build.js"
 import prodEnv from "./prod.js"
 
-
 const envDictionary = {
   dev: "develop",
   develop: "develop",
