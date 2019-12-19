@@ -1,5 +1,12 @@
 # Apollon: an Apollo/Express based GraphQl server
 
+1. Getting started (step by step)
+2. Getting started from template
+3. The logs
+4. Files
+5. Plugins
+6. Building and prod
+
 ## Getting started (step by step)
 
 Add Apollon to a new project
@@ -53,6 +60,23 @@ cd apollon-template
 npm i
 node index.js
 ```
+
+## The logs
+
+Apollon uses Bunyan as the native logging mecanism. To view logs in a "pretty" you can install bunyan with npm
+
+```
+npm install -g bunyan
+```
+Once installed you can pipe the logs into Bunyan like this
+```
+node index.js | bunyan
+```
+You can also change log level using env for example:
+```
+env LOG_LEVEL="DEBUG" node index.js | bunyan
+```
+
 
 ## Files
 
