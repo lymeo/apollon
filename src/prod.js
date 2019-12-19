@@ -145,19 +145,19 @@ const start = async p_config => {
 
   //Middleware
   logger.debug("- Importing middlewares");
-  const middlewares = (await Promise.all(
-    config.$apollon_project_implementations.middlewares.map(p_filepath => {
+  const middlewares = (await Promise.all((await Promise.all(
+    glob.sync(config.sources.middlewares).map(p_filepath => {
       logger.debug({ filepath: p_filepath }, `-- Imported middleware`);
       return import(path.join(process.cwd(), p_filepath));
     })
   ))
-  .map(e => e.default)
-  .concat(plugin_middlewares)
-  .map(middlewareImpl => {
-    return function(request, response, next) {
-      return (await middlewareImpl(context))(request, response, next);
-    };
-  });
+    .map(e => e.default(context))))
+    .concat(plugin_middlewares)
+    .map(middlewareImpl => {
+      return function(request, response, next) {
+        return middlewareImpl(request, response, next);
+      };
+    });
 
   async function boot() {
     logger.info("Apollon is starting");
