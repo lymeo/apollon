@@ -14,7 +14,7 @@ export default {
       "{directives/**/*.js,*.directive.js*.directives.js,directives/**/*.mjs,*.directive.mjs*.directives.mjs,!(node_modules/**/**)}",
     types:
       "{types/**/*.js,*.type.js,*.types.js,types/**/*.mjs,*.type.mjs,*.types.mjs,!(node_modules/**/**)}",
-    schema: "{*.gql, !(node_modules)/*.gql}",
+    schema: "{*.gql,schema/**/*.gql,!(node_modules)/*.gql}",
     config:
       "{config.js,config.mjs,config.json,*.config.js,*.config.mjs,*.config.json,config/**/*.js,config/**/*.mjs,config/**/*.json,!(node_modules/**/**)}",
     middlewares:

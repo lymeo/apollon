@@ -80,6 +80,94 @@ env LOG_LEVEL="DEBUG" node index.js | bunyan
 
 ## Files
 
+### Introduction
+Apollon simplifies GraphQl API development mainly by loading and managing files for you. Different files are needed to make your API function and are used at different moments. All are not necessary but two basic files types are: specification files and the implementation files.
+> The clean seperation between specification and implementation is one of GraphQl great strengths
+
+These files are loaded based on glob rules defined in the config (`config.sources`) and defaults to the values specified in each section below.
+
+### Specification/schema files
+```javascript
+// Default rules
+config.sources.schema = "{"
+                     //Match rules
+                     + "schema/**/*.gql,"
+                     + "*.gql,"
+
+                     //Exclude rules
+                     + "!(node_modules/**/**)" + "}",
+    
+```
+The specification files in apollon contains fragments of the standard GraphQL schema. These fragments are written in native GraphQl.
+
+### Implementation/resolvers files
+```javascript
+// Default rules
+config.sources.resolvers = "{"
+                            //Match rules
+                            + "resolvers/**/*.js,"
+                            + "*.resolver.js,"
+                            + "resolver.js,"
+                            + "*.resolvers.js,"
+                            + "resolvers.js," 
+
+                            //Exclude rules
+                            + "!(node_modules/**/**)" + "}"
+```
+The implementation files are written using Apollo (https://www.apollographql.com/docs/apollo-server/) logic **but are wrapped for Apollon** in an async function as depicted bellow:
+```javascript
+// resolvers.js
+export async function(schema, helpers){
+    let n = 0
+    
+    schema.Mutation.test = (root, params, context, info) => {n+=1; return n};
+    
+    schema.Query.hello = (root, params, context, info) => "World";
+
+}
+```
+
+### Connector files
+
+```javascript
+// Default rules
+config.sources.connectors = "{"
+                     //Match rules
+                     + "connectors/**/*.js,"
+                     + "*.connector.js,"
+                     + "*.connectors.js,"
+
+                     //Exclude rules
+                     + "!(node_modules/**/**)" + "}",
+
+```
+Connector files even though optional are really usefull building blocks for your GraphQl APIs. Connector files define a connector that can be used in Apollon files to access databases, file systems or any data source. Connectors can be seen like drivers.
+> Connectors enable you to seperate request and data processing from data storage or access.
+
+> More content comming soon
+
+### Config files
+> Content comming soon
+
+### Middleware files
+> Content comming soon
+
+### Type implementation files
+```javascript
+// Default rules
+config.sources.types = "{"
+                     //Match rules
+                     + "types/**/*.js,"
+                     + "*.type.js,"
+                     + "*.types.js,"
+
+                     //Exclude rules
+                     + "!(node_modules/**/**)" + "}",
+    
+```
+> Content comming soon
+
+### Directive implementation files
 > Content comming soon
 
 ## Plugins
