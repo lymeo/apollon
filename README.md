@@ -23,7 +23,7 @@ Apollon 2.0 uses native ESM and so to begin you need to import Apollon in your m
 Here is an example:
 
 ```javascript
-//index.js
+// index.js
 import {start, setConfig, config} from "@lymeodev/apollon";
 import { dirname } from 'path';
 import { fileURLToPath } from 'url';
@@ -38,6 +38,7 @@ start();
 All that is left is to create your two files. The first is the specification file for example `schema.gql` as shown below:
 
 ```gql
+// schema.gql
 type Query {
     hello: String!
 }
@@ -45,6 +46,7 @@ type Query {
 
 The second is the implementation named for example `resolvers.js`:
 ```javascript
+// resolvers.js
 export default async function({Query}){
     Query.hello = _ => "Hello world"
 }
@@ -63,7 +65,7 @@ node index.js
 
 ## The logs
 
-Apollon uses Bunyan as the native logging mecanism. To view logs in a "pretty" you can install bunyan with npm
+Apollon uses Bunyan as the native logging mecanism. To view logs in a "pretty" manner you can install bunyan with npm
 
 ```
 npm install -g bunyan
@@ -81,7 +83,7 @@ env LOG_LEVEL="DEBUG" node index.js | bunyan
 ## Files
 
 ### Introduction
-Apollon simplifies GraphQl API development mainly by loading and managing files for you. Different files are needed to make your API function and are used at different moments. All are not necessary but two basic files types are: specification files and the implementation files.
+Apollon simplifies GraphQl API development mainly by loading and managing files for you. Different files are needed to make your API function and are used at different moments. All are not necessary but there are two basic file types: specification files and the implementation files.
 > The clean seperation between specification and implementation is one of GraphQl great strengths
 
 These files are loaded based on glob rules defined in the config (`config.sources`) and defaults to the values specified in each section below.
