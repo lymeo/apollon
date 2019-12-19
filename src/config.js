@@ -16,7 +16,7 @@ export default {
       "{types/**/*.js,*.type.js,*.types.js,types/**/*.mjs,*.type.mjs,*.types.mjs,!(node_modules/**/**)}",
     schema: "{*.gql,schema/**/*.gql,!(node_modules)/*.gql}",
     config:
-      "{config.js,config.mjs,config.json,*.config.js,*.config.mjs,*.config.json,config/**/*.js,config/**/*.mjs,config/**/*.json,!(node_modules/**/**)}",
+      "{config.js,config.mjs,*.config.js,*.config.mjs,config/**/*.js,config/**/*.mjs,!(node_modules/**/**)}",
     middlewares:
       "{middleware/**/*.js,middleware/**/*.mjs,*.mw.mjs,,*.mw.js,!(node_modules/**/**)}"
   },

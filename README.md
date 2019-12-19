@@ -142,7 +142,7 @@ config.sources.connectors = "{"
 
 ```
 Connector files even though optional are really usefull building blocks for your GraphQl APIs. Connector files define a connector that can be used in Apollon files to access databases, file systems or any data source. Connectors can be seen like drivers.
-> Connectors enable you to seperate request and data processing from data storage or access.
+> Connectors enables you to seperate request and data processing from data storage or access.
 
 Connector implementation is based on the return value of an async function as shown below:
 
@@ -175,7 +175,53 @@ export async function(helpers){
 You are free to implement the connector as you seem fit.
 
 ### Config files
-> Content comming soon
+```javascript
+// Default rules
+config.sources.types = "{"
+                     //Match rules
+                     + "config/**/*.js,"
+                     + "*.config.js,"
+
+                     //Exclude rules
+                     + "!(node_modules/**/**)" + "}",
+    
+```
+
+Config files are implemented in simple js files exporting an object as displayed below:
+
+```javascript
+
+export default {
+  port: 3000,
+  plugins: [],
+  root: "./",
+
+  //Glob patterns used as sources for the different files
+  sources: {
+    resolvers:
+      "{resolvers/**/*.js,*.resolver.js,resolver.js,*.resolvers.js,resolvers.js,resolvers/**/*.mjs,*.resolver.mjs,resolver.mjs,*.resolvers.mjs,resolvers.mjs,!(node_modules/**/**)}",
+    connectors:
+      "{connectors/**/*.js,*.connector.js,,*.connectors.js,connectors/**/*.mjs,*.connector.mjs,,*.connectors.mjs,!(node_modules/**/**)}",
+    directives:
+      "{directives/**/*.js,*.directive.js*.directives.js,directives/**/*.mjs,*.directive.mjs*.directives.mjs,!(node_modules/**/**)}",
+    types:
+      "{types/**/*.js,*.type.js,*.types.js,types/**/*.mjs,*.type.mjs,*.types.mjs,!(node_modules/**/**)}",
+    schema: "{*.gql,schema/**/*.gql,!(node_modules)/*.gql}",
+    config:
+      "{config.js,config.mjs,*.config.js,*.config.mjs,config/**/*.js,config/**/*.mjs,!(node_modules/**/**)}",
+    middlewares:
+      "{middleware/**/*.js,middleware/**/*.mjs,*.mw.mjs,,*.mw.js,!(node_modules/**/**)}"
+  },
+
+  //Default CORS settings
+  cors: {
+    origin: "*",
+    methods: "GET,HEAD,PUT,PATCH,POST,DELETE",
+    preflightContinue: false,
+    optionsSuccessStatus: 204
+  }
+};
+```
 
 ### Middleware files
 > Content comming soon
