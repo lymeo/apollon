@@ -144,16 +144,35 @@ config.sources.connectors = "{"
 Connector files even though optional are really usefull building blocks for your GraphQl APIs. Connector files define a connector that can be used in Apollon files to access databases, file systems or any data source. Connectors can be seen like drivers.
 > Connectors enable you to seperate request and data processing from data storage or access.
 
-```
-export default async function(){
-    let mongoDBConnector = {
-        mongo: function mongo(){
+Connector implementation is based on the return value of an async function as shown below:
+
+```javascript
+export default async function MongoDB(){
+    return {
+        read: function(){
             return "stuff"
         } 
     };
-    return mongoDBConnector;
 }
 ```
+
+The async function name is used as the connector name and will default to `default` if none is provided. The connector once loaded is accessible in the context as follows:
+
+```javascript
+// resolvers.js
+export async function(helpers){
+
+    this.Query.hello = (root, params, context, info) => {
+        return context.connectors.MongoDB.read();
+    }
+    this.Query.hello2 = (root, params, {connectors: {MongoDB}}, info) => {
+        return MongoDB.read();
+    }
+
+}
+```
+
+You are free to implement the connector as you seem fit.
 
 ### Config files
 > Content comming soon
