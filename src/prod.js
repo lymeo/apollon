@@ -155,7 +155,7 @@ const start = async p_config => {
   .concat(plugin_middlewares)
   .map(middlewareImpl => {
     return function(request, response, next) {
-      return middlewareImpl(context)(request, response, next);
+      return (await middlewareImpl(context))(request, response, next);
     };
   });
 

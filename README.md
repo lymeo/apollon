@@ -223,8 +223,36 @@ export default {
 };
 ```
 
+The configuration can be seperated into multiple files and will be deep merged together. The configuration is injected in the context and is accessible under the key config: ``` context.config ```
+
 ### Middleware files
-> Content comming soon
+```javascript
+// Default rules
+config.sources.types = "{"
+                     //Match rules
+                     + "middleware/**/*.js,"
+                     + "*.mw.js,"
+                     + "*.middleware.js,"
+
+                     //Exclude rules
+                     + "!(node_modules/**/**)" + "}",
+    
+```
+
+Middleware files are used in the express app to catch and manage global http or GraphQL behavior. Authentication, file uploading and dynamic request modifications can be done using middleware. Middleware is implemented as follows:
+
+```javascript
+export default async function middlewareWrapper(context) {
+
+	return async function authenticate(request, response, next) {
+		context.logger.debug('Hello world from middleware');
+		return next();
+    };
+    
+}
+```
+
+The middleware is wrapped in an async function enabling dynamic generation of the express middleware.
 
 ### Type implementation files
 ```javascript
