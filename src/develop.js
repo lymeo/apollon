@@ -14,9 +14,6 @@ import yaml from "js-yaml";
 import apollo_server_express from "apollo-server-express";
 const { graphqlExpress } = apollo_server_express;
 
-import uploadServer from "apollo-upload-server";
-const { apolloUploadExpress } = uploadServer;
-
 import subTransport from "subscriptions-transport-ws";
 const { SubscriptionServer } = subTransport;
 
@@ -184,7 +181,6 @@ const start = async p_config => {
     app.use(
       config.endpoint || "/",
       bodyParser.json(),
-      apolloUploadExpress(),
       ...middlewares,
       graphqlExpress(async (request, response) => {
         return {

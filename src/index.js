@@ -27,6 +27,4 @@ const { start, setConfig, config } = {
     build: buildEnv
 }[envDictionary[global.ENV]];
 
-console.log(start);
-
 export { start, setConfig, config }
