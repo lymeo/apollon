@@ -242,6 +242,7 @@ config.sources.types = "{"
 Middleware files are used in the express app to catch and manage global http or GraphQL behavior. Authentication, file uploading and dynamic request modifications can be done using middleware. Middleware is implemented as follows:
 
 ```javascript
+// authentication.mw.js
 export default async function middlewareWrapper(context) {
 
 	return async function authenticate(request, response, next) {
@@ -252,7 +253,7 @@ export default async function middlewareWrapper(context) {
 }
 ```
 
-The middleware is wrapped in an async function enabling dynamic generation of the express middleware.
+The middleware is wrapped in an async function enabling dynamic generation of the express middleware and contextualised behavior through the context passed to the async function.
 
 ### Type implementation files
 ```javascript
@@ -267,10 +268,105 @@ config.sources.types = "{"
                      + "!(node_modules/**/**)" + "}",
     
 ```
-> Content comming soon
+Type files are used to implement types and follow Apollo logic. Types can be implemented as follows:
+
+```javascript
+// object.type.js
+import GraphQl from "graphql";
+
+
+export default new GraphQl.GraphQLScalarType({
+    name: "Object",
+    description: "Arbitrary object",
+    parseValue: value => {
+      return typeof value === "object"
+        ? value
+        : typeof value === "string"
+          ? JSON.parse(value)
+          : null;
+    },
+    serialize: value => {
+      return typeof value === "object"
+        ? value
+        : typeof value === "string"
+          ? JSON.parse(value)
+          : null;
+    },
+    parseLiteral: ast => {
+      switch (ast.kind) {
+        case Kind.STRING:
+          return JSON.parse(ast.value);
+        case Kind.OBJECT:
+          let robj = {};
+          let r = function(root, obj) {
+            if (root.fields) {
+              root.fields.forEach(e => {
+                if (e.value.kind == Kind.OBJECT) {
+                  obj[e.name.value] = {};
+                  return r(e.value, obj[e.name.value]);
+                }
+                return (obj[e.name.value] = e.value.value);
+              });
+            }
+          };
+          r(ast, robj);
+          return robj;
+        default:
+          return null;
+      }
+    }
+  });
+```
 
 ### Directive implementation files
-> Content comming soon
+```javascript
+// Default rules
+config.sources.types = "{"
+                     //Match rules
+                     + "directives/**/*.js,"
+                     + "*.directive.js,"
+                     + "*.directives.js,"
+
+                     //Exclude rules
+                     + "!(node_modules/**/**)" + "}",
+```
+
+Directive files enable to implement new directives and are implemented as follows:
+
+```javascript
+// trigger.directive.js
+import GraphQlTools from "graphql-tools";
+
+class TriggerDirective extends GraphQlTools.SchemaDirectiveVisitor {
+
+    visitFieldDefinition(field, {objectType}) {
+        
+        let subName = this.args.name
+
+        const { resolve = defaultFieldResolver } = field;
+
+        field.resolve = async function(root, params, context) {
+
+            let resolverResult = await resolve.call(this, root, params, context); 
+
+            if (subName && subName != '') {
+                const {pubsub} = context
+                
+                pubsub.publish(subName, {
+                    [subName]: resolverResult
+                });
+            }
+
+            return resolverResult;
+        };
+
+    }
+
+}
+
+
+export default TriggerDirective
+```
 
 ## Plugins
 
