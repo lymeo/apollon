@@ -1,245 +1,393 @@
-## Presentation
+# Apollon: an Apollo/Express based GraphQl server
 
-Project apollon's goal is to simplify GraphQl API development and to offer a modulable structure to start building an API in minutes.
+1. Getting started (step by step)
+2. Getting started from template
+3. The logs
+4. Files
+5. Plugins
+6. Building and prod
 
-It is based on the apollo server library that can be found [here](https://github.com/apollographql/apollo-server).
+## Getting started (step by step)
 
-Some of the features:
+Add Apollon to a new project
 
-* Authentication and initialization hook
-* GraphQl playground to test and interact with your API
-* Subscriptions for real time synchronisation with the API
-* Clean working structure separating resolvers, schema, connectors, directives and types
-* JSON logging, ready for your favorite log aggregation tool
+```bash
+npm init
+npm install @lymeodev/apollon@2.0.0-5
+```
 
-## Requirements
+> At this time Apollon is still in prerelease before installing please check latest version available here https://www.npmjs.com/package/@lymeodev/apollon. The package is often updated.
 
-Essential
+Apollon 2.0 uses native ESM and so to begin you need to import Apollon in your main file. You then need to tell Apollon where your project root is so it can automatically detect your files. The last step is to start Apollon. It is that easy!
 
-* NodeJs (minimum v10) or Docker
+Here is an example:
 
-Optional
+```javascript
+// index.js
+import { start, setConfig, setRootFromUrl, config } from "@lymeodev/apollon";
 
-* [Bunyan cli tool](https://github.com/trentm/node-bunyan)
-* [Nodemon cli tool](https://github.com/remy/nodemon)
+setRootFromUrl(import.meta.url);
 
-## Getting started
+start();
+```
 
-Go to our [releases page](https://github.com/lymeo/apollon/releases/) and download your desired version. Unzip the sources if you have downloaded an archive go to the root of the project where there is a `package.json` file. Depending on your package manager enter one of the following commands:
+or
+
+```javascript
+// index.js
+import { start, setConfig, setRootFromUrl, config } from "@lymeodev/apollon";
+
+start.fromUrl(import.meta.url);
+```
+
+All that is left is to create two files. The first is the specification file for example `schema.gql` as shown below:
+
+```gql
+// schema.gql
+type Query {
+    hello: String!
+}
+```
+
+The second is the implementation named for example `resolvers.js`:
+
+```javascript
+// resolvers.js
+export default async function({ Query }) {
+  Query.hello = _ => "Hello world";
+}
+```
+
+That's all folks you have a fully functionnal GraphQl API that can be tested at http://localhost:3000/playground
+
+## Getting started from template
 
 ```shell
+git clone https://github.com/lymeo/apollon-template.git
+cd apollon-template
 npm i
+node index.js
 ```
 
-```shell
-yarn
-```
+## The logs
 
-Once the installation completed enter the following command:
-
-```shell
-npm run dev
-```
-
-If (we recommend) you have the bunyan cli tool you could also enter this command for prettier logs
-
-```shell
-npm run dev | bunyan
-```
-
-After a couple of milliseconds your server should be up and running
-
-## The schema
-
-The GraphQl schema in **apollon**  is seperated into different files inside the root `schema` directory. You can generate a full schema if needed with the following command 
+Apollon uses Bunyan as the native logging mecanism. To view logs in a "pretty" manner you can install bunyan with npm
 
 ```
-npm run schema
+npm install -g bunyan
 ```
 
-And will find the resulting file in a new root `dist`  directory.
+Once installed you can pipe the logs into Bunyan like this
 
-## The resolvers
+```
+node index.js | bunyan
+```
 
-Resolvers are implemented in the resolver directory and are defined in an exported javascript function:
+You can also change log level using env for example:
+
+```
+env LOG_LEVEL="DEBUG" node index.js | bunyan
+```
+
+## Files
+
+### Introduction
+
+Apollon simplifies GraphQl API development mainly by loading and managing files for you. Different files are needed to make your API function and are used at different moments. All are not necessary but there are two basic file types: specification files and the implementation files.
+
+> The clean seperation between specification and implementation is one of GraphQl great strengths
+
+These files are loaded based on glob rules defined in the config (`config.sources`) and defaults to the values specified in each section below.
+
+### Specification/schema files
 
 ```javascript
-module.exports = function(schema, helpers) {
+// Default rules
+config.sources.schema = "{"
+                     //Match rules
+                     + "schema/**/*.gql,"
+                     + "*.gql,"
 
-};
+                     //Exclude rules
+                     + "!(node_modules/**/**)" + "}",
+
 ```
 
-Apollon passes into this function the current schema implementation and an object containing helpers.
+The specification files in apollon contains fragments of the standard GraphQL schema. These fragments are written in native GraphQl.
 
-The schema implementation contains three keys that are used to implement the specification schema.
+### Implementation/resolvers files
 
 ```javascript
-schema.Query;
-schema.Mutation;
-schema.Subscription;
+// Default rules
+config.sources.resolvers =
+  "{" +
+  //Match rules
+  "resolvers/**/*.js," +
+  "*.resolver.js," +
+  "resolver.js," +
+  "*.resolvers.js," +
+  "resolvers.js," +
+  //Exclude rules
+  "!(node_modules/**/**)" +
+  "}";
 ```
 
-A resolver example:
+The implementation files are written using Apollo (https://www.apollographql.com/docs/apollo-server/) logic **but are wrapped for Apollon** in an async function as depicted bellow:
 
 ```javascript
-module.exports = function(schema, helpers) {
+// resolvers.js
+export async function(helpers){
+    let n = 0
 
-    let {Query, Mutation} = schema;
+    this.Mutation.test = (root, params, context, info) => {n+=1; return n};
 
+    this.Query.hello = (root, params, context, info) => "World";
 
-    // Type 
-
-    schema.Comment = {
-        author: (root, _, {connectors: { local } }) => {
-            return local.users.filter(user => user.id == root.author)[0];
-        },
- 
-    }
-
-
-    // Queries
-
-    Query.comments = (root, _, {connectors: { local }}) => {
-        return local.comments;
-    }
-
-
-    // Mutations
-
-    Mutation.comment_delete = (root, { id }, {connectors: {local}}) => {
-        local.comments = local.comments.filter(comment => comment.id != id);
-        return id;
-    }
-
-    new helpers.SimpleSubscription("comment_deleted");
-};
-```
-Each resolver is passed in 3 parameters: the root object, the parameters and the context
-
-> You can access the context object in most scopes in apollon. It contains usefull elements to access global objects.
- 
-```javascript
-Query.comments = (root, parameters, context) => {
-    return context.connectors.local.comments;
-}
-
-// Is the same as
-Query.comments = (root, _, {connectors: { local }}) => {
-    return local.comments;
 }
 ```
 
-## The connectors
-
-The connectors are used inside the app to access data sources. They are defined in the root `connectors`  directory.
-
-Each file is added to the `context.connectors` object based on it's file name and whatever the exported asynchronous function returns is there on out used as the actual connector
-
-Example:
+### Connector files
 
 ```javascript
-let users = [
-  {
-    id: '0',
-    name: 'Homer'
-  },
-  {
-    id: '1',
-    name: 'Bart'
-  },
-  {
-    id: '2',
-    name: 'Moe'
-  }
-];
+// Default rules
+config.sources.connectors = "{"
+                     //Match rules
+                     + "connectors/**/*.js,"
+                     + "*.connector.js,"
+                     + "*.connectors.js,"
 
-let comments = [
-  {
-    id: '0',
-    content: "Je suis un commentaire",
-    author: '0',
-  },
-  {
-    id: '1',
-    content: "Mais non tu es Homer !",
-    author: '1',
-  },
-  {
-    id: '2',
-    content: "Ah",
-    author: '2',
-  },
-  {
-    id: '3',
-    content: "...",
-    author: '1'
-  }
-]
+                     //Exclude rules
+                     + "!(node_modules/**/**)" + "}",
 
+```
 
-module.exports = async function() {
+Connector files even though optional are really usefull building blocks for your GraphQl APIs. Connector files define a connector that can be used in Apollon files to access databases, file systems or any data source. Connectors can be seen like drivers.
+
+> Connectors enables you to seperate request and data processing from data storage or access.
+
+Connector implementation is based on the return value of an async function as shown below:
+
+```javascript
+export default async function MongoDB() {
   return {
-    users,
-    comments
-  };
-```
-
-> This could have exported any other kind of data source for example a MySql connection or a Mongoose client
-
-> The connectors do not natively have access to the **context** because they are called before apollon has fully initialized **but the logger is binded to the scope under the ```this.logger``` key**.  
-
-## The helpers
-
-The helpers is an object accessible in the resolvers and passed in as the second parameter of the exported asynchronous function:
-
-
-```javascript
-module.exports = function(schema, HELPERS) {
-};
-
-```
-
-It contains multiple usefull tools
-
-### FS helper
-
-```javascript
-helpers.fs
-```
-
-> Apollon supports natively file uploading and provides an out of the box ```Upload``` type. 
-
-The FS helper contains for the moments just one method for saving files to the file system. Here is an example:
-
-```javascript 
-module.exports = function({Mutation}, {fs:{storeFileOnFs}}) {
-    Mutation.upload = async (obj, {file, path}) => {
-        // file parameter is actually a Promise so let's await it
-        let { stream, filename, mimetype, encoding } = await file
-
-        // Now that we have the file stream save to the disk unsing the helper
-        storeFileOnFs(stream, "uploads/" + path)
-
-        // resolve some info for the request
-        return { filename, mimetype, encoding };
+    read: function() {
+      return "stuff";
     }
+  };
+}
+```
+
+The async function name is used as the connector name and will default to `default` if none is provided. The connector once loaded is accessible in the context as follows:
+
+```javascript
+// resolvers.js
+export async function(helpers){
+
+    this.Query.hello = (root, params, context, info) => {
+        return context.connectors.MongoDB.read();
+    }
+    this.Query.hello2 = (root, params, {connectors: {MongoDB}}, info) => {
+        return MongoDB.read();
+    }
+
+}
+```
+
+You are free to implement the connector as you seem fit.
+
+### Config files
+
+```javascript
+// Default rules
+config.sources.types = "{"
+                     //Match rules
+                     + "config/**/*.js,"
+                     + "*.config.js,"
+
+                     //Exclude rules
+                     + "!(node_modules/**/**)" + "}",
+
+```
+
+Config files are implemented in simple js files exporting an object as displayed below:
+
+```javascript
+export default {
+  port: 3000,
+  plugins: [],
+  root: "./",
+
+  //Glob patterns used as sources for the different files
+  sources: {
+    resolvers:
+      "{resolvers/**/*.js,*.resolver.js,resolver.js,*.resolvers.js,resolvers.js,resolvers/**/*.mjs,*.resolver.mjs,resolver.mjs,*.resolvers.mjs,resolvers.mjs,!(node_modules/**/**)}",
+    connectors:
+      "{connectors/**/*.js,*.connector.js,,*.connectors.js,connectors/**/*.mjs,*.connector.mjs,,*.connectors.mjs,!(node_modules/**/**)}",
+    directives:
+      "{directives/**/*.js,*.directive.js*.directives.js,directives/**/*.mjs,*.directive.mjs*.directives.mjs,!(node_modules/**/**)}",
+    types:
+      "{types/**/*.js,*.type.js,*.types.js,types/**/*.mjs,*.type.mjs,*.types.mjs,!(node_modules/**/**)}",
+    schema: "{*.gql,schema/**/*.gql,!(node_modules)/*.gql}",
+    config:
+      "{config.js,config.mjs,*.config.js,*.config.mjs,config/**/*.js,config/**/*.mjs,!(node_modules/**/**)}",
+    middlewares:
+      "{middleware/**/*.js,middleware/**/*.mjs,*.mw.mjs,,*.mw.js,!(node_modules/**/**)}"
+  },
+
+  //Default CORS settings
+  cors: {
+    origin: "*",
+    methods: "GET,HEAD,PUT,PATCH,POST,DELETE",
+    preflightContinue: false,
+    optionsSuccessStatus: 204
+  }
 };
 ```
 
-```helpers.fs.storeFileOnFs``` takes two parameters: the file stream to pipe to fs; and the destination path
+The configuration can be seperated into multiple files and will be deep merged together. The configuration is injected in the context and is accessible under the key config: `context.config`
 
-### Subscription helper
+### Middleware files
 
-The subsription helper can be used to create simple subscriptions 
+```javascript
+// Default rules
+config.sources.types = "{"
+                     //Match rules
+                     + "middleware/**/*.js,"
+                     + "*.mw.js,"
+                     + "*.middleware.js,"
 
-... MORE INFO IS COMMING ...
+                     //Exclude rules
+                     + "!(node_modules/**/**)" + "}",
 
-... Please refer to the demo project that has a working implementation of this helper ...
+```
 
-## The src root directory
+Middleware files are used in the express app to catch and manage global http or GraphQL behavior. Authentication, file uploading and dynamic request modifications can be done using middleware. Middleware is implemented as follows:
 
-This directory contains apollon's code. Nothing magic, just a simple express server with the different middleware feel free to change whatever you want or to make a PR if a feature seems interesting.
+```javascript
+// authentication.mw.js
+export default async function middlewareWrapper(context) {
+  return async function authenticate(request, response, next) {
+    context.logger.debug("Hello world from middleware");
+    return next();
+  };
+}
+```
 
-## Demo
+The middleware is wrapped in an async function enabling dynamic generation of the express middleware and contextualised behavior through the context passed to the async function.
 
-A demo project using subscriptions and the apollo client is also available on a release page please check it out if you need more details. You can alternatively browse the source code on [the demo branch](https://github.com/lymeo/apollon/tree/demo).
+### Type implementation files
+
+```javascript
+// Default rules
+config.sources.types = "{"
+                     //Match rules
+                     + "types/**/*.js,"
+                     + "*.type.js,"
+                     + "*.types.js,"
+
+                     //Exclude rules
+                     + "!(node_modules/**/**)" + "}",
+
+```
+
+Type files are used to implement types and follow Apollo logic. Types can be implemented as follows:
+
+```javascript
+// object.type.js
+import GraphQl from "graphql";
+
+export default new GraphQl.GraphQLScalarType({
+  name: "Object",
+  description: "Arbitrary object",
+  parseValue: value => {
+    return typeof value === "object"
+      ? value
+      : typeof value === "string"
+      ? JSON.parse(value)
+      : null;
+  },
+  serialize: value => {
+    return typeof value === "object"
+      ? value
+      : typeof value === "string"
+      ? JSON.parse(value)
+      : null;
+  },
+  parseLiteral: ast => {
+    switch (ast.kind) {
+      case Kind.STRING:
+        return JSON.parse(ast.value);
+      case Kind.OBJECT:
+        let robj = {};
+        let r = function(root, obj) {
+          if (root.fields) {
+            root.fields.forEach(e => {
+              if (e.value.kind == Kind.OBJECT) {
+                obj[e.name.value] = {};
+                return r(e.value, obj[e.name.value]);
+              }
+              return (obj[e.name.value] = e.value.value);
+            });
+          }
+        };
+        r(ast, robj);
+        return robj;
+      default:
+        return null;
+    }
+  }
+});
+```
+
+### Directive implementation files
+
+```javascript
+// Default rules
+config.sources.types = "{"
+                     //Match rules
+                     + "directives/**/*.js,"
+                     + "*.directive.js,"
+                     + "*.directives.js,"
+
+                     //Exclude rules
+                     + "!(node_modules/**/**)" + "}",
+```
+
+Directive files enable to implement new directives and are implemented as follows:
+
+```javascript
+// trigger.directive.js
+import GraphQlTools from "graphql-tools";
+
+class TriggerDirective extends GraphQlTools.SchemaDirectiveVisitor {
+  visitFieldDefinition(field, { objectType }) {
+    let subName = this.args.name;
+
+    const { resolve = defaultFieldResolver } = field;
+
+    field.resolve = async function(root, params, context) {
+      let resolverResult = await resolve.call(this, root, params, context);
+
+      if (subName && subName != "") {
+        const { pubsub } = context;
+
+        pubsub.publish(subName, {
+          [subName]: resolverResult
+        });
+      }
+
+      return resolverResult;
+    };
+  }
+}
+
+export default TriggerDirective;
+```
+
+## Plugins
+
+> Content comming soon
+
+## Building
+
+> Content comming soon

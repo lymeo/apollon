@@ -1,1 +1,0 @@
-directive @trigger(name: String!) on MUTATION | QUERY
