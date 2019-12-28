@@ -144,7 +144,8 @@ export default async function(config, hook) {
 
   const typeFiles = glob.sync(config.sources.types);
 
-  for (let filepath of typeFiles) {
+  for (let p_filepath of typeFiles) {
+    const filepath = path.join(process.cwd(), p_filepath);
     let type = (await import(filepath)).default;
     if (type && type.name) {
       schema[type.name] = type;

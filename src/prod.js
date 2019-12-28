@@ -127,8 +127,9 @@ const start = async p_config => {
 
   //Initialization of connectors
   logger.debug("- Initialisation of the connectors");
-  for (let connectorName in connectors) {
-    connectors[connectorName] = connectors[connectorName].apply(context);
+  for (let connector of connectorImports) {
+    if(!connector.name) throw "No name defined for connector"
+    connectors[connector.name] = connector.apply(context);
   }
   for(let pluginName in plugins) {
     if(plugins[pluginName].connectors){

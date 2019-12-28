@@ -135,7 +135,6 @@ const start = async p_config => {
   for (let connector of connectorImports) {
     if(!connector.name) throw "No name defined for connector"
     connectors[connector.name] = connector.apply(context);
-    console.log(connector.name, connectors[connector.name]);
   }
 
   //Manage connectors from plugins
