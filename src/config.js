@@ -3,6 +3,10 @@ export default {
   port: 3000,
   plugins: [],
   root: "./",
+  
+  production: {
+    logErrors: false
+  },
 
   //Glob patterns used as sources for the different files
   sources: {

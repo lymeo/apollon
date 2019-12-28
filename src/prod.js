@@ -181,7 +181,11 @@ const start = async p_config => {
             pubsub,
             logger: childLogger
           },
-          formatError: e => logger.error(e),
+          formatError: e => {
+            logger.error(e)
+            return config.production.logErrors ? format : "An error occurred"
+          },
+          debug: false,
           schema,
           playground: true
         };
