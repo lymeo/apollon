@@ -24,13 +24,9 @@ Here is an example:
 
 ```javascript
 // index.js
-import {start, setConfig, config} from "@lymeodev/apollon";
-import { dirname } from 'path';
-import { fileURLToPath } from 'url';
+import { start, setConfig, setRootFromUrl, config } from "@lymeodev/apollon";
 
-const __dirname = dirname(fileURLToPath(import.meta.url));
-
-setConfig({root: __dirname});
+setRootFromUrl(import.meta.url);
 
 start();
 ```
@@ -45,10 +41,11 @@ type Query {
 ```
 
 The second is the implementation named for example `resolvers.js`:
+
 ```javascript
 // resolvers.js
-export default async function({Query}){
-    Query.hello = _ => "Hello world"
+export default async function({ Query }) {
+  Query.hello = _ => "Hello world";
 }
 ```
 
@@ -70,25 +67,31 @@ Apollon uses Bunyan as the native logging mecanism. To view logs in a "pretty" m
 ```
 npm install -g bunyan
 ```
+
 Once installed you can pipe the logs into Bunyan like this
+
 ```
 node index.js | bunyan
 ```
+
 You can also change log level using env for example:
+
 ```
 env LOG_LEVEL="DEBUG" node index.js | bunyan
 ```
 
-
 ## Files
 
 ### Introduction
+
 Apollon simplifies GraphQl API development mainly by loading and managing files for you. Different files are needed to make your API function and are used at different moments. All are not necessary but there are two basic file types: specification files and the implementation files.
+
 > The clean seperation between specification and implementation is one of GraphQl great strengths
 
 These files are loaded based on glob rules defined in the config (`config.sources`) and defaults to the values specified in each section below.
 
 ### Specification/schema files
+
 ```javascript
 // Default rules
 config.sources.schema = "{"
@@ -98,32 +101,37 @@ config.sources.schema = "{"
 
                      //Exclude rules
                      + "!(node_modules/**/**)" + "}",
-    
+
 ```
+
 The specification files in apollon contains fragments of the standard GraphQL schema. These fragments are written in native GraphQl.
 
 ### Implementation/resolvers files
+
 ```javascript
 // Default rules
-config.sources.resolvers = "{"
-                            //Match rules
-                            + "resolvers/**/*.js,"
-                            + "*.resolver.js,"
-                            + "resolver.js,"
-                            + "*.resolvers.js,"
-                            + "resolvers.js," 
-
-                            //Exclude rules
-                            + "!(node_modules/**/**)" + "}"
+config.sources.resolvers =
+  "{" +
+  //Match rules
+  "resolvers/**/*.js," +
+  "*.resolver.js," +
+  "resolver.js," +
+  "*.resolvers.js," +
+  "resolvers.js," +
+  //Exclude rules
+  "!(node_modules/**/**)" +
+  "}";
 ```
+
 The implementation files are written using Apollo (https://www.apollographql.com/docs/apollo-server/) logic **but are wrapped for Apollon** in an async function as depicted bellow:
+
 ```javascript
 // resolvers.js
 export async function(helpers){
     let n = 0
-    
+
     this.Mutation.test = (root, params, context, info) => {n+=1; return n};
-    
+
     this.Query.hello = (root, params, context, info) => "World";
 
 }
@@ -143,18 +151,20 @@ config.sources.connectors = "{"
                      + "!(node_modules/**/**)" + "}",
 
 ```
+
 Connector files even though optional are really usefull building blocks for your GraphQl APIs. Connector files define a connector that can be used in Apollon files to access databases, file systems or any data source. Connectors can be seen like drivers.
+
 > Connectors enables you to seperate request and data processing from data storage or access.
 
 Connector implementation is based on the return value of an async function as shown below:
 
 ```javascript
-export default async function MongoDB(){
-    return {
-        read: function(){
-            return "stuff"
-        } 
-    };
+export default async function MongoDB() {
+  return {
+    read: function() {
+      return "stuff";
+    }
+  };
 }
 ```
 
@@ -177,6 +187,7 @@ export async function(helpers){
 You are free to implement the connector as you seem fit.
 
 ### Config files
+
 ```javascript
 // Default rules
 config.sources.types = "{"
@@ -186,13 +197,12 @@ config.sources.types = "{"
 
                      //Exclude rules
                      + "!(node_modules/**/**)" + "}",
-    
+
 ```
 
 Config files are implemented in simple js files exporting an object as displayed below:
 
 ```javascript
-
 export default {
   port: 3000,
   plugins: [],
@@ -225,9 +235,10 @@ export default {
 };
 ```
 
-The configuration can be seperated into multiple files and will be deep merged together. The configuration is injected in the context and is accessible under the key config: ``` context.config ```
+The configuration can be seperated into multiple files and will be deep merged together. The configuration is injected in the context and is accessible under the key config: `context.config`
 
 ### Middleware files
+
 ```javascript
 // Default rules
 config.sources.types = "{"
@@ -238,7 +249,7 @@ config.sources.types = "{"
 
                      //Exclude rules
                      + "!(node_modules/**/**)" + "}",
-    
+
 ```
 
 Middleware files are used in the express app to catch and manage global http or GraphQL behavior. Authentication, file uploading and dynamic request modifications can be done using middleware. Middleware is implemented as follows:
@@ -246,18 +257,17 @@ Middleware files are used in the express app to catch and manage global http or 
 ```javascript
 // authentication.mw.js
 export default async function middlewareWrapper(context) {
-
-	return async function authenticate(request, response, next) {
-		context.logger.debug('Hello world from middleware');
-		return next();
-    };
-    
+  return async function authenticate(request, response, next) {
+    context.logger.debug("Hello world from middleware");
+    return next();
+  };
 }
 ```
 
 The middleware is wrapped in an async function enabling dynamic generation of the express middleware and contextualised behavior through the context passed to the async function.
 
 ### Type implementation files
+
 ```javascript
 // Default rules
 config.sources.types = "{"
@@ -268,59 +278,60 @@ config.sources.types = "{"
 
                      //Exclude rules
                      + "!(node_modules/**/**)" + "}",
-    
+
 ```
+
 Type files are used to implement types and follow Apollo logic. Types can be implemented as follows:
 
 ```javascript
 // object.type.js
 import GraphQl from "graphql";
 
-
 export default new GraphQl.GraphQLScalarType({
-    name: "Object",
-    description: "Arbitrary object",
-    parseValue: value => {
-      return typeof value === "object"
-        ? value
-        : typeof value === "string"
-          ? JSON.parse(value)
-          : null;
-    },
-    serialize: value => {
-      return typeof value === "object"
-        ? value
-        : typeof value === "string"
-          ? JSON.parse(value)
-          : null;
-    },
-    parseLiteral: ast => {
-      switch (ast.kind) {
-        case Kind.STRING:
-          return JSON.parse(ast.value);
-        case Kind.OBJECT:
-          let robj = {};
-          let r = function(root, obj) {
-            if (root.fields) {
-              root.fields.forEach(e => {
-                if (e.value.kind == Kind.OBJECT) {
-                  obj[e.name.value] = {};
-                  return r(e.value, obj[e.name.value]);
-                }
-                return (obj[e.name.value] = e.value.value);
-              });
-            }
-          };
-          r(ast, robj);
-          return robj;
-        default:
-          return null;
-      }
+  name: "Object",
+  description: "Arbitrary object",
+  parseValue: value => {
+    return typeof value === "object"
+      ? value
+      : typeof value === "string"
+      ? JSON.parse(value)
+      : null;
+  },
+  serialize: value => {
+    return typeof value === "object"
+      ? value
+      : typeof value === "string"
+      ? JSON.parse(value)
+      : null;
+  },
+  parseLiteral: ast => {
+    switch (ast.kind) {
+      case Kind.STRING:
+        return JSON.parse(ast.value);
+      case Kind.OBJECT:
+        let robj = {};
+        let r = function(root, obj) {
+          if (root.fields) {
+            root.fields.forEach(e => {
+              if (e.value.kind == Kind.OBJECT) {
+                obj[e.name.value] = {};
+                return r(e.value, obj[e.name.value]);
+              }
+              return (obj[e.name.value] = e.value.value);
+            });
+          }
+        };
+        r(ast, robj);
+        return robj;
+      default:
+        return null;
     }
-  });
+  }
+});
 ```
 
 ### Directive implementation files
+
 ```javascript
 // Default rules
 config.sources.types = "{"
@@ -340,34 +351,28 @@ Directive files enable to implement new directives and are implemented as follow
 import GraphQlTools from "graphql-tools";
 
 class TriggerDirective extends GraphQlTools.SchemaDirectiveVisitor {
+  visitFieldDefinition(field, { objectType }) {
+    let subName = this.args.name;
 
-    visitFieldDefinition(field, {objectType}) {
-        
-        let subName = this.args.name
+    const { resolve = defaultFieldResolver } = field;
 
-        const { resolve = defaultFieldResolver } = field;
+    field.resolve = async function(root, params, context) {
+      let resolverResult = await resolve.call(this, root, params, context);
 
-        field.resolve = async function(root, params, context) {
+      if (subName && subName != "") {
+        const { pubsub } = context;
 
-            let resolverResult = await resolve.call(this, root, params, context); 
+        pubsub.publish(subName, {
+          [subName]: resolverResult
+        });
+      }
 
-            if (subName && subName != '') {
-                const {pubsub} = context
-                
-                pubsub.publish(subName, {
-                    [subName]: resolverResult
-                });
-            }
-
-            return resolverResult;
-        };
-
-    }
-
+      return resolverResult;
+    };
+  }
 }
 
-
-export default TriggerDirective
+export default TriggerDirective;
 ```
 
 ## Plugins

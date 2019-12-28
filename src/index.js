@@ -1,6 +1,8 @@
-import devEnv from "./develop.js"
-import buildEnv from "./build.js"
-import prodEnv from "./prod.js"
+import devEnv from "./develop.js";
+import buildEnv from "./build.js";
+import prodEnv from "./prod.js";
+import { dirname } from "path";
+import { fileURLToPath } from "url";
 
 const envDictionary = {
   dev: "develop",
@@ -21,9 +23,13 @@ if (!envDictionary[global.ENV]) {
   global.ENV = "dev";
 }
 const { start, setConfig, config } = {
-    develop: devEnv, 
-    prod: prodEnv, 
-    build: buildEnv
+  develop: devEnv,
+  prod: prodEnv,
+  build: buildEnv
 }[envDictionary[global.ENV]];
 
-export { start, setConfig, config }
+const setRootFromUrl = function(url) {
+  setConfig({ root: dirname(fileURLToPath(url)) });
+};
+
+export { start, setRootFromUrl, setConfig, config };
