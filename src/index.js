@@ -32,4 +32,9 @@ const setRootFromUrl = function(url) {
   setConfig({ root: dirname(fileURLToPath(url)) });
 };
 
+start.fromUrl = function(url) {
+  setRootFromUrl(url);
+  start();
+};
+
 export { start, setRootFromUrl, setConfig, config };

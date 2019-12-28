@@ -13,7 +13,7 @@ Add Apollon to a new project
 
 ```bash
 npm init
-npm install @lymeodev/apollon@2.0.0-3
+npm install @lymeodev/apollon@2.0.0-5
 ```
 
 > At this time Apollon is still in prerelease before installing please check latest version available here https://www.npmjs.com/package/@lymeodev/apollon. The package is often updated.
@@ -21,6 +21,15 @@ npm install @lymeodev/apollon@2.0.0-3
 Apollon 2.0 uses native ESM and so to begin you need to import Apollon in your main file. You then need to tell Apollon where your project root is so it can automatically detect your files. The last step is to start Apollon. It is that easy!
 
 Here is an example:
+
+```javascript
+// index.js
+import { start, setConfig, setRootFromUrl, config } from "@lymeodev/apollon";
+
+start.fromUrl(import.meta.url);
+```
+
+or
 
 ```javascript
 // index.js
