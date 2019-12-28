@@ -26,7 +26,9 @@ Here is an example:
 // index.js
 import { start, setConfig, setRootFromUrl, config } from "@lymeodev/apollon";
 
-start.fromUrl(import.meta.url);
+setRootFromUrl(import.meta.url);
+
+start();
 ```
 
 or
@@ -35,12 +37,10 @@ or
 // index.js
 import { start, setConfig, setRootFromUrl, config } from "@lymeodev/apollon";
 
-setRootFromUrl(import.meta.url);
-
-start();
+start.fromUrl(import.meta.url);
 ```
 
-All that is left is to create your two files. The first is the specification file for example `schema.gql` as shown below:
+All that is left is to create two files. The first is the specification file for example `schema.gql` as shown below:
 
 ```gql
 // schema.gql
