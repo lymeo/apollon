@@ -51,8 +51,8 @@ The second is the implementation named for example `resolvers.js`:
 
 ```javascript
 // resolvers.js
-export default async function({ Query }) {
-  Query.hello = _ => "Hello world";
+export default async function(helpers) {
+  this.Query.hello = _ => "Hello world";
 }
 ```
 
