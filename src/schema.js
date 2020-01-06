@@ -11,10 +11,6 @@ export default async function(config, project_root) {
   let schemaDirectives = {};
   let schemaDirectiveAsyncBuffer = [];
   directivesFiles.forEach(p_filepath => {
-    let filename = p_filepath
-      .split("/")
-      .slice(-1)[0]
-      .split(".")[0];
     const filepath = path.join(process.cwd(), p_filepath);
     schemaDirectiveAsyncBuffer.push({ filepath, impl: import(filepath) });
     logger.debug(
@@ -28,14 +24,14 @@ export default async function(config, project_root) {
     schemaDirectiveAsyncBuffer.map(e => e.impl)
   );
   directiveImplementations.forEach(
-    (e, i) => (schemaDirectives[schemaDirectiveAsyncBuffer[i].filepath] = e.default)
+    (e, i) => (schemaDirectives[e.default.name] = e.default)
   );
 
   // Manage plugins directives
-  for(let pluginName in this.plugins) {
-    if(this.plugins[pluginName].directives){
-      for(let directiveName in this.plugins[pluginName].directives){
-        schemaDirectives[directiveName] = this.plugins[pluginName].directives[directiveName];
+  for (let pluginName in this.plugins) {
+    if (this.plugins[pluginName].directives) {
+      for (let directive of this.plugins[pluginName].directives) {
+        schemaDirectives[directive.name] = directive;
       }
     }
   }
@@ -49,7 +45,9 @@ export default async function(config, project_root) {
 
   logger.debug(`-- Including specification files`);
 
-  let { default: typeDefs } = await import(path.join(project_root, "./schema.js"));
+  let { default: typeDefs } = await import(
+    path.join(project_root, "./schema.js")
+  );
 
   logger.debug("-- Created the schema for the resolvers from the types file");
 
@@ -68,9 +66,9 @@ export default async function(config, project_root) {
   }
 
   //Manage types defined in plugins
-  for(let pluginName in this.plugins) {
-    if(this.plugins[pluginName].types){
-      for(let typeName in this.plugins[pluginName].types){
+  for (let pluginName in this.plugins) {
+    if (this.plugins[pluginName].types) {
+      for (let typeName in this.plugins[pluginName].types) {
         schema[typeName] = this.plugins[pluginName].types[typeName];
       }
     }
@@ -79,14 +77,16 @@ export default async function(config, project_root) {
   //Setting up directives by forwarding schema so that each directive can add its own implementation
   logger.debug(`- Delegating for resolver implementations`);
   let helpers = helperBootstrap(schema, config);
-  
-  for(let pluginName in this.plugins) {
-    if(this.plugins[pluginName].helpers){
-      helpers[pluginName] = await this.plugins[pluginName].helpers(schema, config)
+
+  for (let pluginName in this.plugins) {
+    if (this.plugins[pluginName].helpers) {
+      helpers[pluginName] = await this.plugins[pluginName].helpers(
+        schema,
+        config
+      );
     }
   }
 
-  
   const resolverFiles = config.$apollon_project_implementations.resolvers;
   for (let p_filepath of resolverFiles) {
     const filepath = path.join(process.cwd(), p_filepath);
@@ -95,10 +95,14 @@ export default async function(config, project_root) {
   }
 
   //Manage resolvers in plugins
-  
-  for(let pluginName in this.plugins) {
-    if(this.plugins[pluginName].resolvers){
-      Promise.all(this.plugins[pluginName].resolvers.map(resolver => resolver.call(schema, helpers)))
+
+  for (let pluginName in this.plugins) {
+    if (this.plugins[pluginName].resolvers) {
+      Promise.all(
+        this.plugins[pluginName].resolvers.map(resolver =>
+          resolver.call(schema, helpers)
+        )
+      );
     }
   }
 
