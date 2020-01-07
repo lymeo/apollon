@@ -65,8 +65,11 @@ const start = async p_config => {
   process.chdir(config.root.toString());
 
   config.apollon = config.apollon || {};
-  if(await fse.exists("./.apollon.yaml")){
-    Object.assign(config.apollon, yaml.safeLoad(await fse.readFile("./.apollon.yaml", "utf8")));
+  if (await fse.exists("./.apollon.yaml")) {
+    Object.assign(
+      config.apollon,
+      yaml.safeLoad(await fse.readFile("./.apollon.yaml", "utf8"))
+    );
   }
 
   //Setting up child logger
@@ -84,16 +87,25 @@ const start = async p_config => {
   //Manage plugins
   let plugins = {};
   let plugin_middlewares = [];
-  if(config.apollon.plugins){
+  if (config.apollon.plugins) {
     logger.info("Loading plugins");
-    for(const plugin in config.apollon.plugins){
-      logger.debug(`- Importing plugin ${config.apollon.plugins[plugin].path || path.join(process.cwd(), "./node_modules/", plugin, "./index.js")}`)
-      plugins[plugin] = import(config.apollon.plugins[plugin].path || path.join(process.cwd(), "./node_modules/", plugin, "./index.js"));
+    for (const plugin in config.apollon.plugins) {
+      logger.debug(
+        `- Importing plugin ${config.apollon.plugins[plugin].path ||
+          path.join(process.cwd(), "./node_modules/", plugin, "./index.js")}`
+      );
+      plugins[plugin] = import(
+        config.apollon.plugins[plugin].path ||
+          path.join(process.cwd(), "./node_modules/", plugin, "./index.js")
+      );
     }
-    for(const plugin in plugins){
-      plugins[plugin] = await (await plugins[plugin]).default(config.apollon.plugins[plugin]);
-      if(config.apollon.plugins[plugin].alias){
-        plugins[config.apollon.plugins[plugin].alias.toString()] = plugins[plugin];
+    for (const plugin in plugins) {
+      plugins[plugin] = await (await plugins[plugin]).default(
+        config.apollon.plugins[plugin]
+      );
+      if (config.apollon.plugins[plugin].alias) {
+        plugins[config.apollon.plugins[plugin].alias.toString()] =
+          plugins[plugin];
       }
       plugin_middlewares.push(...(plugins[plugin].middleware || []));
     }
@@ -118,30 +130,38 @@ const start = async p_config => {
 
   // Setting up schema
   logger.info("Building executable schema");
-  const schema = await (await import("./schema_develop.js")).default.call(context, config);
+  const schema = await (await import("./schema_develop.js")).default.call(
+    context,
+    config
+  );
 
   // Importing connectors
   logger.debug("- Setting up Apollon connectors");
-  const connectorImports = (await Promise.all(
-    glob.sync(config.sources.connectors).map(p_filepath => {
-      logger.debug({ filepath: p_filepath }, `-- Importing connector`);
-      return import(path.join(process.cwd(), p_filepath));
-    })
-  )).map(implementation => implementation.default);
+  const connectorImports = (
+    await Promise.all(
+      glob.sync(config.sources.connectors).map(p_filepath => {
+        logger.debug({ filepath: p_filepath }, `-- Importing connector`);
+        return import(path.join(process.cwd(), p_filepath));
+      })
+    )
+  ).map(implementation => implementation.default);
 
   //Initialization of connectors
   logger.debug("- Initialisation of the connectors");
   const connectors = {};
   for (let connector of connectorImports) {
-    if(!connector.name) throw "No name defined for connector"
+    if (!connector.name) throw "No name defined for connector";
     connectors[connector.name] = connector.apply(context);
   }
 
   //Manage connectors from plugins
-  for(let pluginName in plugins) {
-    if(plugins[pluginName].connectors){
-      for(let connectorName in plugins[pluginName].connectors){
-        connectors[(config.apollon.plugins[pluginName].connector_prefix || "") + connectorName] = plugins[pluginName].connectors[connectorName].apply(context);
+  for (let pluginName in plugins) {
+    if (plugins[pluginName].connectors) {
+      for (let connectorName in plugins[pluginName].connectors) {
+        connectors[
+          (config.apollon.plugins[pluginName].connector_prefix || "") +
+            connectorName
+        ] = plugins[pluginName].connectors[connectorName].apply(context);
       }
     }
   }
@@ -155,19 +175,24 @@ const start = async p_config => {
 
   //Middleware
   logger.debug("- Importing middlewares");
-  const middlewares = (await Promise.all((await Promise.all(
-    glob.sync(config.sources.middlewares).map(p_filepath => {
-      logger.debug({ filepath: p_filepath }, `-- Imported middleware`);
-      return import(path.join(process.cwd(), p_filepath));
-    })
-  ))
-    .map(e => e.default(context))))
-    .concat(plugin_middlewares)
-    .map(middlewareImpl => {
-      return function(request, response, next) {
-        return middlewareImpl(request, response, next);
-      };
-    });
+  const middlewares = (
+    await Promise.all(
+      (
+        await Promise.all(
+          glob.sync(config.sources.middlewares).map(p_filepath => {
+            logger.debug({ filepath: p_filepath }, `-- Imported middleware`);
+            return import(path.join(process.cwd(), p_filepath));
+          })
+        )
+      )
+        .map(e => e.default(context))
+        .concat(plugin_middlewares.map(pluginWrapper => pluginWrapper(context)))
+    )
+  ).map(middlewareImpl => {
+    return function(request, response, next) {
+      return middlewareImpl(request, response, next);
+    };
+  });
 
   async function boot() {
     logger.info("Apollon is starting");
@@ -201,8 +226,8 @@ const start = async p_config => {
             logger: childLogger
           },
           formatError: e => {
-            logger.error(e)
-            return e
+            logger.error(e);
+            return e;
           },
           debug: false,
           schema,
