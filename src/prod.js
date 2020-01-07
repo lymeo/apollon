@@ -164,26 +164,24 @@ const start = async p_config => {
 
   //Middleware
   logger.debug("- Importing middlewares");
-  const middlewares = (
-    await Promise.all(
-      (
-        await Promise.all(
-          config.$apollon_project_implementations.middlewares.map(
-            p_filepath => {
-              logger.debug({ filepath: p_filepath }, `-- Imported middleware`);
-              return import(path.join(process.cwd(), p_filepath));
-            }
-          )
-        )
+  const middlewares = await Promise.all(
+    (
+      await Promise.all(
+        config.$apollon_project_implementations.middlewares.map(p_filepath => {
+          logger.debug({ filepath: p_filepath }, `-- Imported middleware`);
+          return import(path.join(process.cwd(), p_filepath));
+        })
       )
-        .map(e => e.default(context))
-        .concat(plugin_middlewares.map(pluginWrapper => pluginWrapper(context)))
     )
-  ).map(middlewareImpl => {
-    return function(request, response, next) {
-      return middlewareImpl(request, response, next);
-    };
-  });
+      .concat(plugin_middlewares.map(e => ({ default: e })))
+      .map(e => {
+        const wrapperHelpers = { priority: 0 };
+        const futurMiddleware = e.default.call(wrapperHelpers, context);
+        futurMiddleware.wrapperHelpers = wrapperHelpers;
+        return futurMiddleware;
+      })
+      .sort((a, b) => a.wrapperHelpers.priority - b.wrapperHelpers.priority, 0)
+  );
 
   async function boot() {
     logger.info("Apollon is starting");
