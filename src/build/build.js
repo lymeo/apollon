@@ -40,18 +40,13 @@ const start = async p_config => {
   logger.info("Welcome to Apollon building process");
   logger.info("Apollon will start building production ready");
 
+  //Removing dist to avoid glob collisions
+  logger.info("Before we start: removing old dist");
+  await fse.remove("./dist");
+
   // Changing CWD to match potential root configuration
   logger.debug(`- Defining project root => ${config.root}`);
   process.chdir(config.root.toString());
-
-  // Creating dist foleder
-  logger.debug(`Creating dist folder`);
-  await fse.remove("../.tmp.apollon.dist");
-  await fse.remove("./dist");
-  await fse.move("./node_modules", "../.tmp.apollon.node_modules");
-  await fse.copy("./", "../.tmp.apollon.dist");
-  await fse.move("../.tmp.apollon.dist", "./dist");
-  await fse.move("../.tmp.apollon.node_modules", "./node_modules");
 
   //Take into account post-start settings
   mergeDeep(config, p_config);
@@ -114,14 +109,7 @@ const start = async p_config => {
 
   // Setting up schema
   logger.info("Retrieving schema data");
-  let dataFromSchema = (await import("./schema.js")).default;
-
-  logger.info("- Outputting schemas");
-  await fse.outputFile("dist/schema.gql", dataFromSchema.typeDefs);
-  await fse.outputFile(
-    "dist/schema.js",
-    `export default \`${dataFromSchema.typeDefs}\``
-  );
+  let dataFromSchema = await (await import("./schema.js")).default(config);
 
   logger.info("Preparing implementation dependencies");
   config.$apollon_project_implementations = {
@@ -131,6 +119,15 @@ const start = async p_config => {
     resolvers: dataFromSchema.resolverFiles,
     connectors: glob.sync(config.sources.connectors)
   };
+  const schemaFiles = glob.sync(config.sources.schema);
+
+  // Creating dist foleder
+  logger.debug(`Creating dist folder`);
+  await fse.remove("../.tmp.apollon.dist");
+  await fse.move("./node_modules", "../.tmp.apollon.node_modules");
+  await fse.copy("./", "../.tmp.apollon.dist");
+  await fse.move("../.tmp.apollon.dist", "./dist");
+  await fse.move("../.tmp.apollon.node_modules", "./node_modules");
 
   logger.info("Writting config");
   const confToWrite = Object.assign({}, config);
@@ -144,9 +141,14 @@ const start = async p_config => {
   );
   logger.info("Cleaning schema files");
   await Promise.all(
-    glob
-      .sync(config.sources.schema)
-      .map(filepath => fse.unlink(path.join("./dist/", filepath)))
+    schemaFiles.map(filepath => fse.unlink(path.join("./dist/", filepath)))
+  );
+
+  logger.info("- Outputting schemas");
+  await fse.outputFile("dist/schema.gql", dataFromSchema.typeDefs);
+  await fse.outputFile(
+    "dist/schema.js",
+    `export default \`${dataFromSchema.typeDefs}\``
   );
 };
 

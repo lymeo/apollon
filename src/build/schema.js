@@ -1,11 +1,11 @@
 import fs from "fs";
 import path from "path";
 import glob from "glob";
-import logger from "./logger.js";
+import logger from "../logger.js";
 import GraphQlTools from "graphql-tools";
 const { makeExecutableSchema } = GraphQlTools;
 
-import helperBootstrap from "./helpers/index.js";
+import helperBootstrap from "../helpers/index.js";
 
 export default async function(config, hook) {
   logger.debug(`- Compiling directive implementations`);

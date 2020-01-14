@@ -7,7 +7,7 @@ const { makeExecutableSchema } = GraphQlTools;
 
 import helperBootstrap from "../helpers/index.js";
 
-export default async function(config, hook) {
+export default async function(config) {
   logger.debug(`- Compiling directive implementations`);
   const directivesFiles = glob.sync(config.sources.directives);
   let schemaDirectives = {};
