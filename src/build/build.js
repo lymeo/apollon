@@ -1,39 +1,16 @@
 import logger from "../logger.js";
 import mergeDeep from "../helpers/deepMerge.js";
 
+import typeDefMerge from "../typedefs.js";
+
 import fse from "fs-extra";
 
 import glob from "glob";
 import path from "path";
 import yaml from "js-yaml";
 
-// CJS compatibility
-import apollo_server_express from "apollo-server-express";
-const { graphqlExpress } = apollo_server_express;
-
-import http from "http";
-const { createServer } = http;
-
-import subscriptions from "graphql-subscriptions";
-const { PubSub } = subscriptions;
-
 //Initial config
 import config from "../config.js";
-
-const pubsub = new PubSub();
-
-// Scope exporting functions
-function setConfig(p_newConfig) {
-  return mergeDeep(config, p_newConfig || {});
-}
-
-let initialisation = async function initialisation(context, start) {
-  return start();
-};
-
-function setInitilisation(p_newIniliser) {
-  initialisation = p_newIniliser;
-}
 
 // Bootstrapper function
 const start = async p_config => {
@@ -106,17 +83,12 @@ const start = async p_config => {
       plugin_middlewares.push(...(plugins[plugin].middleware || []));
     }
   }
-
-  // Setting up schema
-  logger.info("Retrieving schema data");
-  let dataFromSchema = await (await import("./schema.js")).default(config);
-
   logger.info("Preparing implementation dependencies");
   config.$apollon_project_implementations = {
-    types: dataFromSchema.typeFiles,
-    directives: dataFromSchema.directivesFiles,
+    types: glob.sync(config.sources.types),
+    directives: glob.sync(config.sources.directives),
     middlewares: glob.sync(config.sources.middlewares),
-    resolvers: dataFromSchema.resolverFiles,
+    resolvers: glob.sync(config.sources.resolvers),
     connectors: glob.sync(config.sources.connectors)
   };
   const schemaFiles = glob.sync(config.sources.schema);
@@ -124,6 +96,7 @@ const start = async p_config => {
   // Creating dist foleder
   logger.debug(`Creating dist folder`);
   await fse.remove("../.tmp.apollon.dist");
+  await fse.remove("../.tmp.apollon.node_modules");
   await fse.move("./node_modules", "../.tmp.apollon.node_modules");
   await fse.copy("./", "../.tmp.apollon.dist");
   await fse.move("../.tmp.apollon.dist", "./dist");
@@ -145,11 +118,10 @@ const start = async p_config => {
   );
 
   logger.info("- Outputting schemas");
-  await fse.outputFile("dist/schema.gql", dataFromSchema.typeDefs);
-  await fse.outputFile(
-    "dist/schema.js",
-    `export default \`${dataFromSchema.typeDefs}\``
-  );
+
+  const typeDefs = await typeDefMerge(schemaFiles, plugins);
+  await fse.outputFile("dist/schema.gql", typeDefs);
+  await fse.outputFile("dist/schema.js", `export default \`${typeDefs}\``);
 };
 
 export default start;

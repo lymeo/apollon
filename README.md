@@ -22,7 +22,7 @@ Here is an example:
 
 ```javascript
 // index.js
-import { start, setConfig, setRootFromUrl, config } from "@lymeodev/apollon";
+import { start, setRootFromUrl, config } from "@lymeodev/apollon";
 
 setRootFromUrl(import.meta.url);
 
@@ -358,7 +358,6 @@ Directive files enable to implement new directives and are implemented as follow
 import GraphQlTools from "graphql-tools";
 
 class TriggerDirective extends GraphQlTools.SchemaDirectiveVisitor {
-
   static name = "Trigger";
 
   visitFieldDefinition(field, { objectType }) {

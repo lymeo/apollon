@@ -26,6 +26,7 @@
   },
   "devDependencies": {
     "glob": "^7.1.6",
-    "graphql-playground-middleware-express": "^1.7.12"
+    "graphql-playground-middleware-express": "^1.7.12",
+    "merge-graphql-schemas": "^1.7.6"
   }
 }
