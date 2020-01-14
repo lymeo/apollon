@@ -207,12 +207,12 @@ export default async function(config, hook) {
     );
   }
 
-  return (hook || makeExecutableSchema)({
+  return {
     resolvers: schema,
     typeDefs,
     schemaDirectives,
     resolverFiles,
     typeFiles,
     directivesFiles
-  });
+  };
 }

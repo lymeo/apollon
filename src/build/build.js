@@ -1,5 +1,5 @@
-import logger from "./logger.js";
-import mergeDeep from "./helpers/deepMerge.js";
+import logger from "../logger.js";
+import mergeDeep from "../helpers/deepMerge.js";
 
 import fse from "fs-extra";
 
@@ -18,7 +18,7 @@ import subscriptions from "graphql-subscriptions";
 const { PubSub } = subscriptions;
 
 //Initial config
-import config from "./config.js";
+import config from "../config.js";
 
 const pubsub = new PubSub();
 
@@ -66,8 +66,11 @@ const start = async p_config => {
   mergeDeep(config, ...(await Promise.all(configs)).map(e => e.default));
 
   config.apollon = config.apollon || {};
-  if(await fse.exists("./.apollon.yaml")){
-    Object.assign(config.apollon, yaml.safeLoad(await fse.readFile("./.apollon.yaml", "utf8")));
+  if (await fse.exists("./.apollon.yaml")) {
+    Object.assign(
+      config.apollon,
+      yaml.safeLoad(await fse.readFile("./.apollon.yaml", "utf8"))
+    );
   }
 
   //Setting up child logger
@@ -85,28 +88,33 @@ const start = async p_config => {
   //Manage plugins
   let plugins = {};
   let plugin_middlewares = [];
-  if(config.apollon.plugins){
+  if (config.apollon.plugins) {
     logger.info("Loading plugins");
-    for(const plugin in config.apollon.plugins){
-      logger.debug(`- Importing plugin ${config.apollon.plugins[plugin].path || path.join(process.cwd(), "./node_modules/", plugin, "./index.js")}`)
-      plugins[plugin] = import(config.apollon.plugins[plugin].path || path.join(process.cwd(), "./node_modules/", plugin, "./index.js"));
+    for (const plugin in config.apollon.plugins) {
+      logger.debug(
+        `- Importing plugin ${config.apollon.plugins[plugin].path ||
+          path.join(process.cwd(), "./node_modules/", plugin, "./index.js")}`
+      );
+      plugins[plugin] = import(
+        config.apollon.plugins[plugin].path ||
+          path.join(process.cwd(), "./node_modules/", plugin, "./index.js")
+      );
     }
-    for(const plugin in plugins){
-      plugins[plugin] = await (await plugins[plugin]).default(config.apollon.plugins[plugin]);
-      if(config.apollon.plugins[plugin].alias){
-        plugins[config.apollon.plugins[plugin].alias.toString()] = plugins[plugin];
+    for (const plugin in plugins) {
+      plugins[plugin] = await (await plugins[plugin]).default(
+        config.apollon.plugins[plugin]
+      );
+      if (config.apollon.plugins[plugin].alias) {
+        plugins[config.apollon.plugins[plugin].alias.toString()] =
+          plugins[plugin];
       }
       plugin_middlewares.push(...(plugins[plugin].middleware || []));
     }
   }
 
   // Setting up schema
-  logger.info("Building schema");
-  let dataFromSchema;
-  const schema = await (await import("./schema_develop.js")).default.call({plugins},
-    config,
-    data => (dataFromSchema = data)
-  );
+  logger.info("Retrieving schema data");
+  let dataFromSchema = (await import("./schema.js")).default;
 
   logger.info("- Outputting schemas");
   await fse.outputFile("dist/schema.gql", dataFromSchema.typeDefs);
@@ -142,4 +150,4 @@ const start = async p_config => {
   );
 };
 
-export default { start, setConfig, setInitilisation };
+export default start;

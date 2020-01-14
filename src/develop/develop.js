@@ -1,10 +1,13 @@
-import logger from "./logger.js";
+import logger from "../logger.js";
+import mergeDeep from "../helpers/deepMerge.js";
 
+import glob from "glob";
 import path from "path";
-import fse from "fs-extra";
 import express from "express";
 import cors from "cors";
 import bodyParser from "body-parser";
+import expressPlayground from "graphql-playground-middleware-express";
+import fse from "fs-extra";
 import yaml from "js-yaml";
 
 // CJS compatibility
@@ -23,14 +26,14 @@ const { createServer } = http;
 import subscriptions from "graphql-subscriptions";
 const { PubSub } = subscriptions;
 
+//Initial config
+import config from "../config.js";
+
 const pubsub = new PubSub();
-let project_root = "./";
 
 // Scope exporting functions
-function setConfig({ root }) {
-  if (root) {
-    project_root = root;
-  }
+function setConfig(p_newConfig) {
+  return mergeDeep(config, p_newConfig || {});
 }
 
 let initialisation = async function initialisation(context, start) {
@@ -43,17 +46,23 @@ function setInitilisation(p_newIniliser) {
 
 // Bootstrapper function
 const start = async p_config => {
-  if (p_config && p_config.root) {
-    project_root = p_config.root;
-  }
   logger.info("Welcome to Apollon");
   logger.info("Apollon will start initializing");
 
-  const config = await fse.readJSON(path.join(project_root, "./config.json"));
+  //Take into account post-start settings
+  mergeDeep(config, p_config);
+
+  // Set up the final config
+  logger.debug("- Preparing config");
+  const configs = glob.sync(config.sources.config).map(filepath => {
+    logger.debug({ filepath }, `-- Importing config file`);
+    return import(path.join(process.cwd(), filepath));
+  });
+  mergeDeep(config, ...(await Promise.all(configs)).map(e => e.default));
 
   // Changing CWD to match potential root configuration
-  logger.debug(`- Defining project root => ${project_root}`);
-  process.chdir(project_root.toString());
+  logger.debug(`- Defining project root => ${config.root}`);
+  process.chdir(config.root.toString());
 
   config.apollon = config.apollon || {};
   if (await fse.exists("./.apollon.yaml")) {
@@ -123,29 +132,29 @@ const start = async p_config => {
   logger.info("Building executable schema");
   const schema = await (await import("./schema.js")).default.call(
     context,
-    config,
-    project_root
+    config
   );
 
   // Importing connectors
   logger.debug("- Setting up Apollon connectors");
-  const connectors = {};
-  let connectorImports = (
+  const connectorImports = (
     await Promise.all(
-      config.$apollon_project_implementations.connectors.map(p_filepath => {
+      glob.sync(config.sources.connectors).map(p_filepath => {
         logger.debug({ filepath: p_filepath }, `-- Importing connector`);
         return import(path.join(process.cwd(), p_filepath));
       })
     )
   ).map(implementation => implementation.default);
-  context.connectors = connectors;
 
   //Initialization of connectors
   logger.debug("- Initialisation of the connectors");
+  const connectors = {};
   for (let connector of connectorImports) {
     if (!connector.name) throw "No name defined for connector";
     connectors[connector.name] = connector.apply(context);
   }
+
+  //Manage connectors from plugins
   for (let pluginName in plugins) {
     if (plugins[pluginName].connectors) {
       for (let connectorName in plugins[pluginName].connectors) {
@@ -156,6 +165,8 @@ const start = async p_config => {
       }
     }
   }
+  context.connectors = connectors;
+
   logger.debug("-- Waiting for connectors to initialize");
   for (let connectorName in connectors) {
     connectors[connectorName] = await connectors[connectorName];
@@ -164,10 +175,11 @@ const start = async p_config => {
 
   //Middleware
   logger.debug("- Importing middlewares");
+
   const middlewares = await Promise.all(
     (
       await Promise.all(
-        config.$apollon_project_implementations.middlewares.map(p_filepath => {
+        glob.sync(config.sources.middlewares).map(p_filepath => {
           logger.debug({ filepath: p_filepath }, `-- Imported middleware`);
           return import(path.join(process.cwd(), p_filepath));
         })
@@ -188,6 +200,16 @@ const start = async p_config => {
     app.use(cors(config.cors));
 
     app.use(
+      "/playground",
+      expressPlayground.default({
+        endpoint: config.endpoint || "/",
+        SubscriptionEndpoint: `ws://localhost:3000/subscriptions`
+      }),
+      () => {}
+    );
+    logger.debug("- Endpoint /playground is accessible");
+
+    app.use(
       config.endpoint || "/",
       bodyParser.json(),
       ...middlewares,
@@ -206,7 +228,7 @@ const start = async p_config => {
           },
           formatError: e => {
             logger.error(e);
-            return config.production.logErrors ? format : "An error occurred";
+            return e;
           },
           debug: false,
           schema,
@@ -241,17 +263,10 @@ const start = async p_config => {
       );
       logger.debug("- Subscription server created");
       logger.info("- Apollon started", { port: PORT });
-      if (
-        process.argv[2] == "test" ||
-        process.env.NODE_ENV == "test" ||
-        process.env.NODE_ENV == "tests"
-      ) {
-        require("./tests")(context);
-      }
     });
   }
 
   await initialisation(context, boot);
 };
 
-export default { start, setConfig, setInitilisation };
+export default start;

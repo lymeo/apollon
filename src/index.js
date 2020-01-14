@@ -1,8 +1,6 @@
-import devEnv from "./develop.js";
-import buildEnv from "./build.js";
-import prodEnv from "./prod.js";
 import { dirname } from "path";
 import { fileURLToPath } from "url";
+import deepMerge from "./helpers/deepMerge.js";
 
 const envDictionary = {
   dev: "develop",
@@ -22,19 +20,25 @@ global.ENV = (
 if (!envDictionary[global.ENV]) {
   global.ENV = "dev";
 }
-const { start, setConfig, config } = {
-  develop: devEnv,
-  prod: prodEnv,
-  build: buildEnv
-}[envDictionary[global.ENV]];
 
+let config = {};
+
+// Helper functions for setting root
 const setRootFromUrl = function(url) {
-  setConfig({ root: dirname(fileURLToPath(url)) });
+  config.root = dirname(fileURLToPath(url));
 };
 
-start.fromUrl = function(url) {
+start.fromUrl = async function(url) {
   setRootFromUrl(url);
-  start();
+  return await start();
 };
 
-export { start, setRootFromUrl, setConfig, config };
+async function start() {
+  const env = await import(
+    `./${[envDictionary[global.ENV]]}/${[envDictionary[global.ENV]]}.js`
+  );
+
+  return await env.default(config);
+}
+
+export { start, setRootFromUrl, config };
