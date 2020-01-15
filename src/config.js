@@ -1,9 +1,8 @@
-
 export default {
   port: 3000,
   plugins: [],
   root: "./",
-  
+
   production: {
     logErrors: false
   },

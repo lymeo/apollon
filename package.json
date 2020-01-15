@@ -23,9 +23,7 @@
     "path": "^0.12.7",
     "graphql-client": "^2.0.1",
     "subscriptions-transport-ws": "^0.9.12",
-    "merge-graphql-schemas": "^1.7.6"
-  },
-  "devDependencies": {
+    "merge-graphql-schemas": "^1.7.6",
     "glob": "^7.1.6",
     "graphql-playground-middleware-express": "^1.7.12"
   }
