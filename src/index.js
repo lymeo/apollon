@@ -22,6 +22,7 @@ if (!envDictionary[global.ENV]) {
 }
 
 let config = {};
+let context;
 
 // Helper functions for setting root
 const setRootFromUrl = function(url) {
@@ -38,7 +39,33 @@ async function start() {
     `./${[envDictionary[global.ENV]]}/${[envDictionary[global.ENV]]}.js`
   );
 
-  return await env.default(config);
+  let bootData = await env.default(config);
+
+  if (bootData.context) {
+    context = bootData.context;
+  }
+
+  if (bootData.config) {
+    config = bootData.config;
+  }
+
+  return bootData;
 }
 
-export { start, setRootFromUrl, config };
+function getConfig() {
+  return config;
+}
+
+function getContext() {
+  if (context) {
+    return context;
+  } else {
+    throw "Context can only be accessed after start/boot process";
+  }
+}
+
+function getEnv() {
+  return global.ENV;
+}
+
+export { start, setRootFromUrl, getConfig, getContext, getEnv };

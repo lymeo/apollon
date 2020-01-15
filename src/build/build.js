@@ -122,6 +122,8 @@ const start = async p_config => {
   const typeDefs = await typeDefMerge(schemaFiles, plugins);
   await fse.outputFile("dist/schema.gql", typeDefs);
   await fse.outputFile("dist/schema.js", `export default \`${typeDefs}\``);
+
+  return {};
 };
 
 export default start;

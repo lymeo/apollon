@@ -31,19 +31,6 @@ import config from "../config.js";
 
 const pubsub = new PubSub();
 
-// Scope exporting functions
-function setConfig(p_newConfig) {
-  return mergeDeep(config, p_newConfig || {});
-}
-
-let initialisation = async function initialisation(context, start) {
-  return start();
-};
-
-function setInitilisation(p_newIniliser) {
-  initialisation = p_newIniliser;
-}
-
 // Bootstrapper function
 const start = async p_config => {
   logger.info("Welcome to Apollon");
@@ -195,78 +182,76 @@ const start = async p_config => {
       .sort((a, b) => a.wrapperHelpers.priority - b.wrapperHelpers.priority, 0)
   );
 
-  async function boot() {
-    logger.info("Apollon is starting");
-    app.use(cors(config.cors));
+  logger.info("Apollon is starting");
+  app.use(cors(config.cors));
 
-    app.use(
-      "/playground",
-      expressPlayground.default({
-        endpoint: config.endpoint || "/",
-        SubscriptionEndpoint: `ws://localhost:3000/subscriptions`
-      }),
-      () => {}
-    );
-    logger.debug("- Endpoint /playground is accessible");
+  app.use(
+    "/playground",
+    expressPlayground.default({
+      endpoint: config.endpoint || "/",
+      SubscriptionEndpoint: `ws://localhost:3000/subscriptions`
+    }),
+    () => {}
+  );
+  logger.debug("- Endpoint /playground is accessible");
 
-    app.use(
-      config.endpoint || "/",
-      bodyParser.json(),
-      ...middlewares,
-      graphqlExpress(async (request, response) => {
-        return {
-          context: {
-            PORT,
-            ENDPOINT: config.endpoint || "/",
-            connectors,
-            app,
-            request,
-            response,
-            config,
-            pubsub,
-            logger: childLogger
-          },
-          formatError: e => {
-            logger.error(e);
-            return e;
-          },
-          debug: false,
-          schema,
-          playground: true
-        };
-      })
-    );
-    logger.debug("- Initialised the main endpoint", {
-      endpoint: config.endpoint || "/"
-    });
-
-    logger.debug("- Wrapping app in the underlying HTTP server");
-
-    const server = createServer(app);
-
-    context.server = server;
-
-    server.listen(PORT, () => {
-      SubscriptionServer.create(
-        {
-          execute,
-          subscribe,
-          schema,
-          onOperation: (message, params, webSocket) => {
-            return { ...params, context };
-          }
+  app.use(
+    config.endpoint || "/",
+    bodyParser.json(),
+    ...middlewares,
+    graphqlExpress(async (request, response) => {
+      return {
+        context: {
+          PORT,
+          ENDPOINT: config.endpoint || "/",
+          connectors,
+          app,
+          request,
+          response,
+          config,
+          pubsub,
+          logger: childLogger
         },
-        {
-          server,
-          path: "/subscriptions"
-        }
-      );
-      logger.debug("- Subscription server created");
-      logger.info("- Apollon started", { port: PORT });
-    });
-  }
+        formatError: e => {
+          logger.error(e);
+          return e;
+        },
+        debug: false,
+        schema,
+        playground: true
+      };
+    })
+  );
+  logger.debug("- Initialised the main endpoint", {
+    endpoint: config.endpoint || "/"
+  });
 
-  await initialisation(context, boot);
+  logger.debug("- Wrapping app in the underlying HTTP server");
+
+  const server = createServer(app);
+
+  context.server = server;
+
+  server.listen(PORT, () => {
+    SubscriptionServer.create(
+      {
+        execute,
+        subscribe,
+        schema,
+        onOperation: (message, params, webSocket) => {
+          return { ...params, context };
+        }
+      },
+      {
+        server,
+        path: "/subscriptions"
+      }
+    );
+    logger.debug("- Subscription server created");
+    logger.info("- Apollon started", { port: PORT });
+  });
+
+  return { context, config };
 };
 
 export default start;

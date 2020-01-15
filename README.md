@@ -22,7 +22,7 @@ Here is an example:
 
 ```javascript
 // index.js
-import { start, setRootFromUrl, config } from "@lymeodev/apollon";
+import { start, setRootFromUrl, getConfig } from "@lymeodev/apollon";
 
 setRootFromUrl(import.meta.url);
 
@@ -33,7 +33,7 @@ or
 
 ```javascript
 // index.js
-import { start, setConfig, setRootFromUrl, config } from "@lymeodev/apollon";
+import { start, setRootFromUrl } from "@lymeodev/apollon";
 
 start.fromUrl(import.meta.url);
 ```
@@ -386,8 +386,29 @@ export default TriggerDirective;
 
 ## Plugins
 
-> Content comming soon
+Plugins are simple npm modules exporting different elements that are then used in Apollon.
+
+They must be declared in the .apollon.yaml file where you can also configure the plugin like shown bellow:
+
+```yaml
+plugins:
+  "@lymeodev/apollon-plugin-template":
+    # Settings
+    foo: bar
+```
+
+> For creating plugin please refer to https://github.com/lymeo/apollon-plugin-template
 
 ## Building
 
-> Content comming soon
+An Apollon project can be built by defining the env variable `APOLLON_ENV` to `BUILD` as follows:
+
+```sh
+env APOLLON_ENV='BUILD' node index.js
+```
+
+This sould create a dist folder containing the optimised project ready for production. You can launch the built project by launching in the dist folder
+
+```sh
+env APOLLON_ENV='PROD' node index.js
+```
