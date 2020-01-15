@@ -13,7 +13,7 @@ Add Apollon to a new project
 
 ```bash
 npm init
-npm install @lymeodev/apollon@2.0.0
+npm install @lymeodev/apollon
 ```
 
 Apollon 2.0 uses native ESM and so to begin you need to import Apollon in your main file. You then need to tell Apollon where your project root is so it can automatically detect your files. The last step is to start Apollon. It is that easy!
