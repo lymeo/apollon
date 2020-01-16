@@ -93,8 +93,8 @@ const start = async p_config => {
   const PORT = process.env.PORT || config.port || 3000;
   const app = express();
 
-  logger.debug("- Creating context object");
-  const context = {
+  logger.debug("- Creating preContext object");
+  const preContext = {
     PORT,
     ENDPOINT: config.endpoint || "/",
     app,
@@ -107,7 +107,7 @@ const start = async p_config => {
   // Setting up schema
   logger.info("Building executable schema");
   const schema = await (await import("./schema.js")).default.call(
-    context,
+    preContext,
     config,
     project_root
   );
@@ -123,13 +123,13 @@ const start = async p_config => {
       })
     )
   ).map(implementation => implementation.default);
-  context.connectors = connectors;
+  preContext.connectors = connectors;
 
   //Initialization of connectors
   logger.debug("- Initialisation of the connectors");
   for (let connector of connectorImports) {
     if (!connector.name) throw "No name defined for connector";
-    connectors[connector.name] = connector.apply(context);
+    connectors[connector.name] = connector.apply(preContext);
   }
   for (let pluginName in plugins) {
     if (plugins[pluginName].connectors) {
@@ -137,7 +137,7 @@ const start = async p_config => {
         connectors[
           (config.apollon.plugins[pluginName].connector_prefix || "") +
             connectorName
-        ] = plugins[pluginName].connectors[connectorName].apply(context);
+        ] = plugins[pluginName].connectors[connectorName].apply(preContext);
       }
     }
   }
@@ -161,7 +161,7 @@ const start = async p_config => {
       .concat(plugin_middlewares.map(e => ({ default: e })))
       .map(e => {
         const wrapperHelpers = { priority: 0 };
-        const futurMiddleware = e.default.call(wrapperHelpers, context);
+        const futurMiddleware = e.default.call(wrapperHelpers, preContext);
         futurMiddleware.wrapperHelpers = wrapperHelpers;
         return futurMiddleware;
       })
@@ -171,23 +171,29 @@ const start = async p_config => {
   logger.info("Apollon is starting");
   app.use(cors(config.cors));
 
+  const injectors = [];
+
+  logger.debug("Retrieving injectors for context injection from plugins");
+  for (let pluginName in plugins) {
+    if (
+      plugins[pluginName].injectors &&
+      config.apollon.plugins[pluginName].priviledged
+    ) {
+      injectors.push(...plugins[pluginName].injectors);
+    }
+  }
+
   app.use(
     config.endpoint || "/",
     bodyParser.json(),
     ...middlewares,
     graphqlExpress(async (request, response) => {
+      const context = Object.assign({}, preContext);
+      context.request = request;
+      context.response = response;
+      await Promise.all(injectors.map(injector => injector(context)));
       return {
-        context: {
-          PORT,
-          ENDPOINT: config.endpoint || "/",
-          connectors,
-          app,
-          request,
-          response,
-          config,
-          pubsub,
-          logger: childLogger
-        },
+        context,
         formatError: e => {
           logger.error(e);
           return config.production.logErrors ? format : "An error occurred";
@@ -206,7 +212,16 @@ const start = async p_config => {
 
   const server = createServer(app);
 
-  context.server = server;
+  preContext.server = server;
+
+  for (let pluginName in plugins) {
+    if (
+      plugins[pluginName].priviledged &&
+      config.apollon.plugins[pluginName].priviledged
+    ) {
+      await plugins[pluginName].priviledged(preContext);
+    }
+  }
 
   server.listen(PORT, () => {
     SubscriptionServer.create(
@@ -215,7 +230,7 @@ const start = async p_config => {
         subscribe,
         schema,
         onOperation: (message, params, webSocket) => {
-          return { ...params, context };
+          return { ...params, context: preContext };
         }
       },
       {
@@ -230,11 +245,11 @@ const start = async p_config => {
       process.env.NODE_ENV == "test" ||
       process.env.NODE_ENV == "tests"
     ) {
-      require("./tests")(context);
+      require("./tests")(preContext);
     }
   });
 
-  return { context, config };
+  return { context: preContext, config };
 };
 
 export default start;

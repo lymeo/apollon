@@ -104,8 +104,8 @@ const start = async p_config => {
   const PORT = process.env.PORT || config.port || 3000;
   const app = express();
 
-  logger.debug("- Creating context object");
-  const context = {
+  logger.debug("- Creating pre-context object");
+  const preContext = {
     PORT,
     ENDPOINT: config.endpoint || "/",
     app,
@@ -118,9 +118,10 @@ const start = async p_config => {
   // Setting up schema
   logger.info("Building executable schema");
   const schema = await (await import("./schema.js")).default.call(
-    context,
+    preContext,
     config
   );
+  preContext.schema = schema;
 
   // Importing connectors
   logger.debug("- Setting up Apollon connectors");
@@ -138,7 +139,7 @@ const start = async p_config => {
   const connectors = {};
   for (let connector of connectorImports) {
     if (!connector.name) throw "No name defined for connector";
-    connectors[connector.name] = connector.apply(context);
+    connectors[connector.name] = connector.apply(preContext);
   }
 
   //Manage connectors from plugins
@@ -148,11 +149,11 @@ const start = async p_config => {
         connectors[
           (config.apollon.plugins[pluginName].connector_prefix || "") +
             connectorName
-        ] = plugins[pluginName].connectors[connectorName].apply(context);
+        ] = plugins[pluginName].connectors[connectorName].apply(preContext);
       }
     }
   }
-  context.connectors = connectors;
+  preContext.connectors = connectors;
 
   logger.debug("-- Waiting for connectors to initialize");
   for (let connectorName in connectors) {
@@ -175,7 +176,7 @@ const start = async p_config => {
       .concat(plugin_middlewares.map(e => ({ default: e })))
       .map(e => {
         const wrapperHelpers = { priority: 0 };
-        const futurMiddleware = e.default.call(wrapperHelpers, context);
+        const futurMiddleware = e.default.call(wrapperHelpers, preContext);
         futurMiddleware.wrapperHelpers = wrapperHelpers;
         return futurMiddleware;
       })
@@ -195,23 +196,30 @@ const start = async p_config => {
   );
   logger.debug("- Endpoint /playground is accessible");
 
+  const injectors = [];
+
+  logger.debug("Retrieving injectors for context injection from plugins");
+  for (let pluginName in plugins) {
+    if (
+      plugins[pluginName].injectors &&
+      config.apollon.plugins[pluginName].priviledged
+    ) {
+      injectors.push(...plugins[pluginName].injectors);
+    }
+  }
+
   app.use(
     config.endpoint || "/",
     bodyParser.json(),
     ...middlewares,
     graphqlExpress(async (request, response) => {
+      const context = Object.assign({}, preContext);
+      context.request = request;
+      context.response = response;
+      await Promise.all(injectors.map(injector => injector(context)));
+
       return {
-        context: {
-          PORT,
-          ENDPOINT: config.endpoint || "/",
-          connectors,
-          app,
-          request,
-          response,
-          config,
-          pubsub,
-          logger: childLogger
-        },
+        context,
         formatError: e => {
           logger.error(e);
           return e;
@@ -230,7 +238,16 @@ const start = async p_config => {
 
   const server = createServer(app);
 
-  context.server = server;
+  preContext.server = server;
+
+  for (let pluginName in plugins) {
+    if (
+      plugins[pluginName].priviledged &&
+      config.apollon.plugins[pluginName].priviledged
+    ) {
+      await plugins[pluginName].priviledged(preContext);
+    }
+  }
 
   server.listen(PORT, () => {
     SubscriptionServer.create(
@@ -239,7 +256,7 @@ const start = async p_config => {
         subscribe,
         schema,
         onOperation: (message, params, webSocket) => {
-          return { ...params, context };
+          return { ...params, context: preContext };
         }
       },
       {
@@ -251,7 +268,7 @@ const start = async p_config => {
     logger.info("- Apollon started", { port: PORT });
   });
 
-  return { context, config };
+  return { context: preContext, config };
 };
 
 export default start;
