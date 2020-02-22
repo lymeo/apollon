@@ -1,24 +1,20 @@
 import logger from "../logger.js";
 import mergeDeep from "../helpers/deepMerge.js";
+import pluginsLoader from "../plugins.js";
+import schemaLoader from "./schema.js";
+import playgroundSettings from "./playgroundSettings.js";
 
 import glob from "glob";
 import path from "path";
 import express from "express";
 import cors from "cors";
 import bodyParser from "body-parser";
-import expressPlayground from "graphql-playground-middleware-express";
 import fse from "fs-extra";
 import yaml from "js-yaml";
 
 // CJS compatibility
 import apollo_server_express from "apollo-server-express";
-const { graphqlExpress } = apollo_server_express;
-
-import subTransport from "subscriptions-transport-ws";
-const { SubscriptionServer } = subTransport;
-
-import graphql from "graphql";
-const { execute, subscribe } = graphql;
+const { ApolloServer, gql } = apollo_server_express;
 
 import http from "http";
 const { createServer } = http;
@@ -34,7 +30,6 @@ const pubsub = new PubSub();
 // Bootstrapper function
 const start = async p_config => {
   logger.info("Welcome to Apollon");
-  logger.info("Apollon will start initializing");
 
   //Take into account post-start settings
   mergeDeep(config, p_config);
@@ -72,31 +67,7 @@ const start = async p_config => {
   };
 
   //Manage plugins
-  let plugins = {};
-  let plugin_middlewares = [];
-  if (config.apollon.plugins) {
-    logger.info("Loading plugins");
-    for (const plugin in config.apollon.plugins) {
-      logger.debug(
-        `- Importing plugin ${config.apollon.plugins[plugin].path ||
-          path.join(process.cwd(), "./node_modules/", plugin, "./index.js")}`
-      );
-      plugins[plugin] = import(
-        config.apollon.plugins[plugin].path ||
-          path.join(process.cwd(), "./node_modules/", plugin, "./index.js")
-      );
-    }
-    for (const plugin in plugins) {
-      plugins[plugin] = await (await plugins[plugin]).default(
-        config.apollon.plugins[plugin]
-      );
-      if (config.apollon.plugins[plugin].alias) {
-        plugins[config.apollon.plugins[plugin].alias.toString()] =
-          plugins[plugin];
-      }
-      plugin_middlewares.push(...(plugins[plugin].middleware || []));
-    }
-  }
+  const { plugins, plugin_middlewares } = await pluginsLoader(config);
 
   //Setting up underlying web server
   logger.info("Setting up connectivity");
@@ -117,10 +88,7 @@ const start = async p_config => {
 
   // Setting up schema
   logger.info("Building executable schema");
-  const schema = await (await import("./schema.js")).default.call(
-    preContext,
-    config
-  );
+  const schema = await schemaLoader.call(preContext, config);
   preContext.schema = schema;
 
   // Importing connectors
@@ -186,16 +154,6 @@ const start = async p_config => {
   logger.info("Apollon is starting");
   app.use(cors(config.cors));
 
-  app.use(
-    "/playground",
-    expressPlayground.default({
-      endpoint: config.endpoint || "/",
-      SubscriptionEndpoint: `ws://localhost:3000/subscriptions`
-    }),
-    () => {}
-  );
-  logger.debug("- Endpoint /playground is accessible");
-
   const injectors = [];
 
   logger.debug("Retrieving injectors for context injection from plugins");
@@ -208,35 +166,37 @@ const start = async p_config => {
     }
   }
 
-  app.use(
-    config.endpoint || "/",
-    bodyParser.json(),
-    ...middlewares,
-    graphqlExpress(async (request, response) => {
-      const context = Object.assign({}, preContext);
-      context.request = request;
-      context.response = response;
-      await Promise.all(injectors.map(injector => injector(context)));
+  const serverOptions = Object.assign(
+    config.apollo || {
+      playground: playgroundSettings,
+      debug: false,
+      formatError: e => {
+        logger.error(e);
+        return e;
+      },
+      context: async (request, response) => {
+        const context = Object.assign({}, preContext);
+        context.request = request;
+        context.response = response;
+        await Promise.all(injectors.map(injector => injector(context)));
 
-      return {
-        context,
-        formatError: e => {
-          logger.error(e);
-          return e;
-        },
-        debug: false,
-        schema,
-        playground: true
-      };
-    })
+        return context;
+      }
+    },
+    {
+      schema: schema
+    }
   );
+
+  const server = new ApolloServer(serverOptions);
+
+  app.use(config.endpoint || "/", bodyParser.json(), ...middlewares);
+
+  server.applyMiddleware({ app, path: config.endpoint || "/" });
+
   logger.debug("- Initialised the main endpoint", {
     endpoint: config.endpoint || "/"
   });
-
-  logger.debug("- Wrapping app in the underlying HTTP server");
-
-  const server = createServer(app);
 
   preContext.server = server;
 
@@ -249,23 +209,8 @@ const start = async p_config => {
     }
   }
 
-  server.listen(PORT, () => {
-    SubscriptionServer.create(
-      {
-        execute,
-        subscribe,
-        schema,
-        onOperation: (message, params, webSocket) => {
-          return { ...params, context: preContext };
-        }
-      },
-      {
-        server,
-        path: "/subscriptions"
-      }
-    );
-    logger.debug("- Subscription server created");
-    logger.info("- Apollon started", { port: PORT });
+  app.listen({ port: PORT }, () => {
+    logger.info("- Apollon started", { port: PORT, path: server.graphqlPath });
   });
 
   return { context: preContext, config };
