@@ -1,7 +1,7 @@
 {
   "name": "@lymeodev/apollon",
   "type": "module",
-  "version": "2.4.1-alpha.0",
+  "version": "2.5.0-alpha.0",
   "description": "Project apollon's goal is to simplify GraphQl API development and to offer a modulable structure to start building an API in minutes.",
   "main": "src/index.js",
   "keywords": [],
