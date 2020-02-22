@@ -61,31 +61,7 @@ const start = async p_config => {
   };
 
   //Manage plugins
-  let plugins = {};
-  let plugin_middlewares = [];
-  if (config.apollon.plugins) {
-    logger.info("Loading plugins");
-    for (const plugin in config.apollon.plugins) {
-      logger.debug(
-        `- Importing plugin ${config.apollon.plugins[plugin].path ||
-          path.join(process.cwd(), "./node_modules/", plugin, "./index.js")}`
-      );
-      plugins[plugin] = import(
-        config.apollon.plugins[plugin].path ||
-          path.join(process.cwd(), "./node_modules/", plugin, "./index.js")
-      );
-    }
-    for (const plugin in plugins) {
-      plugins[plugin] = await (await plugins[plugin]).default(
-        config.apollon.plugins[plugin]
-      );
-      if (config.apollon.plugins[plugin].alias) {
-        plugins[config.apollon.plugins[plugin].alias.toString()] =
-          plugins[plugin];
-      }
-      plugin_middlewares.push(...(plugins[plugin].middleware || []));
-    }
-  }
+  const { plugins, plugin_middlewares } = await pluginsLoader(config);
 
   //Setting up underlying web server
   logger.info("Setting up connectivity");
@@ -183,34 +159,37 @@ const start = async p_config => {
     }
   }
 
-  app.use(
-    config.endpoint || "/",
-    bodyParser.json(),
-    ...middlewares,
-    graphqlExpress(async (request, response) => {
-      const context = Object.assign({}, preContext);
-      context.request = request;
-      context.response = response;
-      await Promise.all(injectors.map(injector => injector(context)));
-      return {
-        context,
-        formatError: e => {
-          logger.error(e);
-          return config.production.logErrors ? format : "An error occurred";
-        },
-        debug: false,
-        schema,
-        playground: true
-      };
-    })
+  const serverOptions = Object.assign(
+    config.apollo || {
+      playground: playgroundSettings,
+      debug: false,
+      formatError: e => {
+        logger.error(e);
+        return e;
+      },
+      context: async (request, response) => {
+        const context = Object.assign({}, preContext);
+        context.request = request;
+        context.response = response;
+        await Promise.all(injectors.map(injector => injector(context)));
+
+        return context;
+      }
+    },
+    {
+      schema: schema
+    }
   );
+
+  const server = new ApolloServer(serverOptions);
+
+  app.use(config.endpoint || "/", bodyParser.json(), ...middlewares);
+
+  server.applyMiddleware({ app, path: config.endpoint || "/" });
+
   logger.debug("- Initialised the main endpoint", {
     endpoint: config.endpoint || "/"
   });
-
-  logger.debug("- Wrapping app in the underlying HTTP server");
-
-  const server = createServer(app);
 
   preContext.server = server;
 
@@ -223,30 +202,8 @@ const start = async p_config => {
     }
   }
 
-  server.listen(PORT, () => {
-    SubscriptionServer.create(
-      {
-        execute,
-        subscribe,
-        schema,
-        onOperation: (message, params, webSocket) => {
-          return { ...params, context: preContext };
-        }
-      },
-      {
-        server,
-        path: "/subscriptions"
-      }
-    );
-    logger.debug("- Subscription server created");
-    logger.info("- Apollon started", { port: PORT });
-    if (
-      process.argv[2] == "test" ||
-      process.env.NODE_ENV == "test" ||
-      process.env.NODE_ENV == "tests"
-    ) {
-      require("./tests")(preContext);
-    }
+  app.listen({ port: PORT }, () => {
+    logger.info("- Apollon started", { port: PORT, path: server.graphqlPath });
   });
 
   return { context: preContext, config };
