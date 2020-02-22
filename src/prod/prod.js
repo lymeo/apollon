@@ -1,4 +1,5 @@
 import logger from "../logger.js";
+import pluginsLoader from "../plugins.js";
 
 import path from "path";
 import fse from "fs-extra";
@@ -9,7 +10,7 @@ import yaml from "js-yaml";
 
 // CJS compatibility
 import apollo_server_express from "apollo-server-express";
-const { graphqlExpress } = apollo_server_express;
+const { ApolloServer, gql } = apollo_server_express;
 
 import subTransport from "subscriptions-transport-ws";
 const { SubscriptionServer } = subTransport;
@@ -161,7 +162,6 @@ const start = async p_config => {
 
   const serverOptions = Object.assign(
     config.apollo || {
-      playground: playgroundSettings,
       debug: false,
       formatError: e => {
         logger.error(e);
