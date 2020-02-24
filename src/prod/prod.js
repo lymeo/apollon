@@ -1,5 +1,7 @@
 import logger from "../logger.js";
 import pluginsLoader from "../plugins.js";
+import schemaLoader from "./schema.js";
+import subscriptionsLoader from "../subscriptions.js";
 
 import path from "path";
 import fse from "fs-extra";
@@ -7,24 +9,12 @@ import express from "express";
 import cors from "cors";
 import bodyParser from "body-parser";
 import yaml from "js-yaml";
+import http from "http";
 
 // CJS compatibility
 import apollo_server_express from "apollo-server-express";
-const { ApolloServer, gql } = apollo_server_express;
+const { ApolloServer } = apollo_server_express;
 
-import subTransport from "subscriptions-transport-ws";
-const { SubscriptionServer } = subTransport;
-
-import graphql from "graphql";
-const { execute, subscribe } = graphql;
-
-import http from "http";
-const { createServer } = http;
-
-import subscriptions from "graphql-subscriptions";
-const { PubSub } = subscriptions;
-
-const pubsub = new PubSub();
 let project_root = "./";
 
 // Bootstrapper function
@@ -76,18 +66,24 @@ const start = async p_config => {
     ENDPOINT: config.endpoint || "/",
     app,
     config,
-    pubsub,
     logger: childLogger,
     plugins
   };
 
-  // Setting up schema
-  logger.info("Building executable schema");
-  const schema = await (await import("./schema.js")).default.call(
+  //Setting up subscriptionssubscriptionsLoader
+  logger.info("Setting up subscriptions");
+  const subscriptions = await subscriptionsLoader.call(
     preContext,
     config,
-    project_root
+    path.join(
+      process.cwd(),
+      config.$apollon_project_implementations.subscriptions
+    )
   );
+
+  // Setting up schema
+  logger.info("Building executable schema");
+  const schema = await schemaLoader.call(preContext, config, project_root);
 
   // Importing connectors
   logger.debug("- Setting up Apollon connectors");
@@ -177,7 +173,8 @@ const start = async p_config => {
       }
     },
     {
-      schema: schema
+      schema,
+      subscriptions
     }
   );
 
@@ -191,6 +188,9 @@ const start = async p_config => {
     endpoint: config.endpoint || "/"
   });
 
+  const httpServer = http.createServer(app);
+  server.installSubscriptionHandlers(httpServer);
+
   preContext.server = server;
 
   for (let pluginName in plugins) {
@@ -202,8 +202,13 @@ const start = async p_config => {
     }
   }
 
-  app.listen({ port: PORT }, () => {
-    logger.info("- Apollon started", { port: PORT, path: server.graphqlPath });
+  httpServer.listen(PORT, () => {
+    logger.info(
+      `Apollon main endpoint is ready at http://localhost:${PORT}${server.graphqlPath}`
+    );
+    logger.info(
+      `Apollon subscriptions endpoint is ready at ws://localhost:${PORT}${server.subscriptionsPath}`
+    );
   });
 
   return { context: preContext, config };

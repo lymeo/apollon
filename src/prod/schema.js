@@ -76,13 +76,15 @@ export default async function(config, project_root) {
 
   //Setting up directives by forwarding schema so that each directive can add its own implementation
   logger.debug(`- Delegating for resolver implementations`);
-  let helpers = helperBootstrap(schema, config);
+  let helpers = helperBootstrap(schema, config, this);
+  helpers.logger = logger;
 
   for (let pluginName in this.plugins) {
     if (this.plugins[pluginName].helpers) {
       helpers[pluginName] = await this.plugins[pluginName].helpers(
         schema,
-        config
+        config,
+        this
       );
     }
   }
@@ -90,7 +92,7 @@ export default async function(config, project_root) {
   const resolverFiles = config.$apollon_project_implementations.resolvers;
   for (let p_filepath of resolverFiles) {
     const filepath = path.join(process.cwd(), p_filepath);
-    await (await import(filepath)).default.call(schema, helpers);
+    await (await import(filepath)).default.call(schema, this, helpers);
     logger.debug({ filepath: p_filepath }, `-- Delegated to`);
   }
 
@@ -100,7 +102,7 @@ export default async function(config, project_root) {
     if (this.plugins[pluginName].resolvers) {
       Promise.all(
         this.plugins[pluginName].resolvers.map(resolver =>
-          resolver.call(schema, helpers)
+          resolver.call(schema, this, helpers)
         )
       );
     }

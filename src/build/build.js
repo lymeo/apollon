@@ -89,6 +89,7 @@ const start = async p_config => {
     directives: glob.sync(config.sources.directives),
     middlewares: glob.sync(config.sources.middlewares),
     resolvers: glob.sync(config.sources.resolvers),
+    subscriptions: glob.sync(config.sources.subscriptions)[0],
     connectors: glob.sync(config.sources.connectors)
   };
   const schemaFiles = glob.sync(config.sources.schema);

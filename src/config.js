@@ -18,6 +18,7 @@ export default {
     types:
       "{types/**/*.js,*.type.js,*.types.js,types/**/*.mjs,*.type.mjs,*.types.mjs,!(node_modules/**/**)}",
     schema: "{*.gql,schema/**/*.gql,!(node_modules)/*.gql}",
+    subscriptions: "subscriptions.js",
     config:
       "{config.js,config.mjs,*.config.js,*.config.mjs,config/**/*.js,config/**/*.mjs,!(node_modules/**/**)}",
     middlewares:
