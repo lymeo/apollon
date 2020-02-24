@@ -238,6 +238,11 @@ export default {
     methods: "GET,HEAD,PUT,PATCH,POST,DELETE",
     preflightContinue: false,
     optionsSuccessStatus: 204
+  },
+
+  //Apollo Server settings (apollo introspection can be set here)
+  apollo: {
+    debug: true
   }
 };
 ```
@@ -383,6 +388,32 @@ class TriggerDirective extends GraphQlTools.SchemaDirectiveVisitor {
 
 export default TriggerDirective;
 ```
+
+### apollon.yaml file
+
+The `apollon.yaml` file is an additional configuration file. Here is the default values for some of the properties you can define in this file.
+
+```yaml
+plugins: {}
+playground:
+  "editor.cursorShape": "line", // possible values: 'line', 'block', 'underline'
+  "editor.fontFamily": `'Source Code Pro', 'Consolas', 'Inconsolata', 'Droid Sans Mono', 'Monaco', monospace`,
+  "editor.fontSize": 14,
+  "editor.reuseHeaders": true, // new tab reuses headers from last tab
+  "editor.theme": "dark", // possible values: 'dark', 'light'
+  "general.betaUpdates": false,
+  "prettier.printWidth": 80,
+  "prettier.tabWidth": 2,
+  "prettier.useTabs": false,
+  "request.credentials": "omit", // possible values: 'omit', 'include', 'same-origin'
+  "schema.polling.enable": true, // enables automatic schema polling
+  "schema.polling.endpointFilter": "*localhost*", // endpoint filter for schema polling
+  "schema.polling.interval": 2000, // schema polling interval in ms
+  "schema.disableComments": boolean,
+  "tracing.hideTracingResponse": true
+```
+
+> The configuration in this file is loaded under `config.apollon` in the final accessible configuration object
 
 ## Plugins
 
