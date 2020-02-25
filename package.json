@@ -1,7 +1,7 @@
 {
   "name": "@lymeodev/apollon",
   "type": "module",
-  "version": "2.5.0",
+  "version": "2.5.1",
   "description": "Project apollon's goal is to simplify GraphQl API development and to offer a modulable structure to start building an API in minutes.",
   "main": "src/index.js",
   "keywords": [],
@@ -17,7 +17,11 @@
     "graphql": "^0.13.2",
     "graphql-client": "^2.0.1",
     "graphql-tools": "^3.0.4",
+    "install": "^0.13.0",
     "js-yaml": "^3.13.1",
-    "merge-graphql-schemas": "^1.7.6"
+    "merge-graphql-schemas": "^1.7.6",
+    "npm": "^6.13.1",
+    "path": "^0.12.7",
+    "subscriptions-transport-ws": "^0.9.12"
   }
 }
