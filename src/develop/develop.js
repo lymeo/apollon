@@ -202,6 +202,15 @@ const start = async p_config => {
     }
   );
 
+  for (let pluginName in plugins) {
+    if (
+      plugins[pluginName].priviledged &&
+      config.apollon.plugins[pluginName].priviledged
+    ) {
+      await plugins[pluginName].priviledged(preContext, serverOptions);
+    }
+  }
+
   const server = new ApolloServer(serverOptions);
   app.use(config.endpoint || "/", bodyParser.json(), ...middlewares);
   server.applyMiddleware({
@@ -216,15 +225,6 @@ const start = async p_config => {
   server.installSubscriptionHandlers(httpServer);
 
   preContext.server = server;
-
-  for (let pluginName in plugins) {
-    if (
-      plugins[pluginName].priviledged &&
-      config.apollon.plugins[pluginName].priviledged
-    ) {
-      await plugins[pluginName].priviledged(preContext);
-    }
-  }
 
   httpServer.listen(PORT, () => {
     logger.info(

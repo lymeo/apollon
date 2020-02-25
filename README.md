@@ -417,6 +417,8 @@ playground:
 
 ### Subscriptions file
 
+> This file is used to alter default behavior and should be only used if you whish to override it.
+
 ```javascript
 // Default rules
 config.sources.subscription = "subscriptions.js";
@@ -449,9 +451,22 @@ export default async function(config) {
 }
 ```
 
+The previous example shows a full alteration of the default behavior. You can also change or return only one of the keys and change just one behavior like this:
+
+```javascript
+export default async function(config) {
+  return {
+    //Web socket events
+    onConnect(connectionParams, webSocket, context) {
+      console.log("On connect");
+    }
+  };
+}
+```
+
 ## Subscriptions
 
-Subscription are enabled by default on Apollon through the apollo-server implementation helpers are available in resolver files through the `helpers` param. You can also access the `PubSub` object through the _context_ and the _preContext_.
+Subscription are enabled by default on Apollon through the apollo-server implementation. Helper functions are available in resolver files through the `helpers` param. You can also access the `PubSub` object through the _context_ and the _preContext_.
 
 ```javascript
 export default async function({ pubsub }, { subscriptions }) {
