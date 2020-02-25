@@ -51,7 +51,7 @@ The second is the implementation named for example `resolvers.js`:
 
 ```javascript
 // resolvers.js
-export default async function(helpers) {
+export default async function(preContext, helpers) {
   this.Query.hello = _ => "Hello world";
 }
 ```
@@ -137,9 +137,9 @@ The implementation files are written using Apollo (https://www.apollographql.com
 export async function(helpers){
     let n = 0
 
-    this.Mutation.test = (root, params, context, info) => {n+=1; return n};
+    this.Mutation.test = (parent, params, context, info) => {n+=1; return n};
 
-    this.Query.hello = (root, params, context, info) => "World";
+    this.Query.hello = (parent, params, context, info) => "World";
 
 }
 ```
@@ -181,10 +181,10 @@ The async function name is used as the connector name and will default to `defau
 // resolvers.js
 export async function(preContext, helpers){
 
-    this.Query.hello = (root, params, context, info) => {
+    this.Query.hello = (parent, params, context, info) => {
         return context.connectors.MongoDB.read();
     }
-    this.Query.hello2 = (root, params, {connectors: {MongoDB}}, info) => {
+    this.Query.hello2 = (parent, params, {connectors: {MongoDB}}, info) => {
         return MongoDB.read();
     }
 
@@ -370,8 +370,8 @@ class TriggerDirective extends GraphQlTools.SchemaDirectiveVisitor {
 
     const { resolve = defaultFieldResolver } = field;
 
-    field.resolve = async function(root, params, context) {
-      let resolverResult = await resolve.call(this, root, params, context);
+    field.resolve = async function(parent, params, context) {
+      let resolverResult = await resolve.call(this, parent, params, context);
 
       if (subName && subName != "") {
         const { pubsub } = context;
@@ -489,6 +489,44 @@ export default async function({ pubsub }, { subscriptions }) {
     );
     return counter;
   };
+}
+```
+
+## File uploading
+
+File uploading is supported and can be implemented as follows:
+
+```gql
+# schema file
+type File {
+  filename: String!
+  mimetype: String!
+  encoding: String!
+}
+
+type Query {
+  uploads: [File]
+}
+
+type Mutation {
+  singleUpload(file: Upload!): File!
+}
+```
+
+```javascript
+// resolvers.js
+export async function(preContext, helpers){
+
+    function singleUpload(parent, {file}, context, info){
+      return file.then(file => {
+        //Contents of Upload scalar: https://github.com/jaydenseric/graphql-upload#class-graphqlupload
+        //file.stream is a node stream that contains the contents of the uploaded file
+        //node stream api: https://nodejs.org/api/stream.html
+        return file;
+      });
+    }
+
+    this.Mutation.singleUpload = singleUpload;
 }
 ```
 
