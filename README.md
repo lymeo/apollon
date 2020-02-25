@@ -179,7 +179,7 @@ The async function name is used as the connector name and will default to `defau
 
 ```javascript
 // resolvers.js
-export async function(helpers){
+export async function(preContext, helpers){
 
     this.Query.hello = (root, params, context, info) => {
         return context.connectors.MongoDB.read();
@@ -449,6 +449,34 @@ export default async function(config) {
 }
 ```
 
+## Subscriptions
+
+Subscription are enabled by default on Apollon through the apollo-server implementation helpers are available in resolver files through the `helpers` param. You can also access the `PubSub` object through the _context_ and the _preContext_.
+
+```javascript
+export default async function({ pubsub }, { subscriptions }) {
+  let counter = 0;
+
+  const channel = subscriptions.create(
+    "counter", //channel name
+
+    // A filter publishing only if counter is uneven.
+    ({ counter, foo }, variables) => {
+      console.log(foo);
+      return counter % 2;
+    }
+  );
+
+  this.Query.hello = async _ => {
+    channel.publish(
+      ++counter, // Data
+      { foo: "bar" } // Metadata
+    );
+    return counter;
+  };
+}
+```
+
 ## Plugins
 
 Plugins are simple npm modules exporting different elements that are then used in Apollon.
@@ -472,7 +500,7 @@ An Apollon project can be built by defining the env variable `APOLLON_ENV` to `B
 env APOLLON_ENV='BUILD' node index.js
 ```
 
-This sould create a dist folder containing the optimised project ready for production. You can launch the built project by launching in the dist folder
+This should create a dist folder containing the optimised project ready for production. You can launch the built project by launching in the dist folder
 
 ```sh
 env APOLLON_ENV='PROD' node index.js
