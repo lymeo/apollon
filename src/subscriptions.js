@@ -10,9 +10,9 @@ export default async function(config, subscriptionsPath) {
     customSubscriptions = await customSubscriptionsFn.default(config);
   }
 
-  const { PubSub, onConnect, onDisconnect } = customSubscriptions;
+  const { PubSub, onConnect, onDisconnect, context } = customSubscriptions;
 
   this.pubsub = new (PubSub || PubSubDefault)();
 
-  return { onConnect, onDisconnect };
+  return { onConnect, onDisconnect, context };
 }

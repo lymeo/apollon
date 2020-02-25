@@ -415,6 +415,40 @@ playground:
 
 > The configuration in this file is loaded under `config.apollon` in the final accessible configuration object
 
+### Subscriptions file
+
+```javascript
+// Default rules
+config.sources.subscription = "subscriptions.js";
+```
+
+This file enables to change subscription behavior. From web socket events to context alteration and authentication.
+
+```javascript
+import apolloServer from "apollo-server-express";
+
+export default async function(config) {
+  return {
+    //Web socket events
+    onConnect(connectionParams, webSocket, context) {
+      console.log("On connect");
+    },
+    onDisconnect(webSocket, context) {
+      console.log("On disconnect");
+    },
+
+    //Change subscription context
+    context(connection) {
+      //Hello key to subscription context
+      this.hello = "world";
+    },
+
+    //Custum PubSub can use (Redis based, Google, or your own system)
+    PubSub: new apolloServer.PubSub()
+  };
+}
+```
+
 ## Plugins
 
 Plugins are simple npm modules exporting different elements that are then used in Apollon.
