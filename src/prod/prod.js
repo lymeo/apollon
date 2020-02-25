@@ -1,6 +1,7 @@
 import logger from "../logger.js";
 import pluginsLoader from "../plugins.js";
 import schemaLoader from "./schema.js";
+import contextLoader from "../context.js";
 import subscriptionsLoader from "../subscriptions.js";
 
 import path from "path";
@@ -163,17 +164,12 @@ const start = async p_config => {
         logger.error(e);
         return e;
       },
-      context: async (request, response) => {
-        const context = Object.assign({}, preContext);
-        context.request = request;
-        context.response = response;
-        await Promise.all(injectors.map(injector => injector(context)));
-
-        return context;
-      }
+      context: contextLoader(preContext, injectors, subscriptions)
     },
     {
-      schema,
+      resolvers: schema.resolvers,
+      typeDefs: schema.typeDefs,
+      schemaDirectives: schema.schemaDirectives,
       subscriptions
     }
   );

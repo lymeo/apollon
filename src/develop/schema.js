@@ -2,8 +2,6 @@ import fs from "fs";
 import path from "path";
 import glob from "glob";
 import logger from "../logger.js";
-import GraphQlTools from "graphql-tools";
-const { makeExecutableSchema } = GraphQlTools;
 import typeDefMerge from "../typedefs.js";
 
 import helperBootstrap from "../helpers/index.js";
@@ -48,7 +46,7 @@ export default async function(config) {
 
   logger.debug("-- Created the schema for the resolvers from the types file");
 
-  let schema = { Query: {}, Mutation: {}, Subscription: {} };
+  let resolvers = { Query: {}, Mutation: {}, Subscription: {} };
   logger.debug(
     "-- Added the Query, Mutation and Subscription to the executable schema"
   );
@@ -59,7 +57,7 @@ export default async function(config) {
     const filepath = path.join(process.cwd(), p_filepath);
     let type = (await import(filepath)).default;
     if (type && type.name) {
-      schema[type.name] = type;
+      resolvers[type.name] = type;
     }
   }
 
@@ -67,20 +65,20 @@ export default async function(config) {
   for (let pluginName in this.plugins) {
     if (this.plugins[pluginName].types) {
       for (let typeName in this.plugins[pluginName].types) {
-        schema[typeName] = this.plugins[pluginName].types[typeName];
+        resolvers[typeName] = this.plugins[pluginName].types[typeName];
       }
     }
   }
 
   //Setting up directives by forwarding schema so that each directive can add its own implementation
   logger.debug(`- Delegating for resolver implementations`);
-  let helpers = helperBootstrap(schema, config, this);
+  let helpers = helperBootstrap(resolvers, config, this);
   helpers.logger = logger;
 
   for (let pluginName in this.plugins) {
     if (this.plugins[pluginName].helpers) {
       helpers[pluginName] = await this.plugins[pluginName].helpers(
-        schema,
+        resolvers,
         config,
         this
       );
@@ -90,7 +88,7 @@ export default async function(config) {
   const resolverFiles = glob.sync(config.sources.resolvers);
   for (let p_filepath of resolverFiles) {
     const filepath = path.join(process.cwd(), p_filepath);
-    await (await import(filepath)).default.call(schema, this, helpers);
+    await (await import(filepath)).default.call(resolvers, this, helpers);
     logger.debug({ filepath: p_filepath }, `-- Delegated to`);
   }
 
@@ -100,34 +98,28 @@ export default async function(config) {
     if (this.plugins[pluginName].resolvers) {
       Promise.all(
         this.plugins[pluginName].resolvers.map(resolver =>
-          resolver.call(schema, this, helpers)
+          resolver.call(resolvers, this, helpers)
         )
       );
     }
   }
 
-  logger.debug(`- Making executable`);
-  if (Object.keys(schema.Query).length == 0) {
-    delete schema.Query;
-    logger.debug("-- Removed the empty query field from executable schema");
+  if (Object.keys(resolvers.Query).length == 0) {
+    delete resolvers.Query;
+    logger.debug("-- Removed the empty query field from resolvers");
   }
-  if (Object.keys(schema.Mutation).length == 0) {
-    delete schema.Mutation;
-    logger.debug("-- Removed the empty mutation field from executable schema");
+  if (Object.keys(resolvers.Mutation).length == 0) {
+    delete resolvers.Mutation;
+    logger.debug("-- Removed the empty mutation field from resolvers");
   }
-  if (Object.keys(schema.Subscription).length == 0) {
-    delete schema.Subscription;
-    logger.debug(
-      "-- Removed the empty subscription field from executable schema"
-    );
+  if (Object.keys(resolvers.Subscription).length == 0) {
+    delete resolvers.Subscription;
+    logger.debug("-- Removed the empty subscription field from resolvers");
   }
 
-  return makeExecutableSchema({
-    resolvers: schema,
+  return {
+    resolvers,
     typeDefs,
-    schemaDirectives,
-    resolverFiles,
-    typeFiles,
-    directivesFiles
-  });
+    schemaDirectives
+  };
 }

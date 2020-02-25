@@ -1,6 +1,7 @@
 import logger from "../logger.js";
 import mergeDeep from "../helpers/deepMerge.js";
 import pluginsLoader from "../plugins.js";
+import contextLoader from "../context.js";
 import subscriptionsLoader from "../subscriptions.js";
 import schemaLoader from "./schema.js";
 import playgroundSettings from "./playgroundSettings.js";
@@ -178,26 +179,12 @@ const start = async p_config => {
         logger.error(e);
         return e;
       },
-      context: async ({ req, res, connection }) => {
-        const context = Object.assign({}, preContext);
-
-        if (connection) {
-          //Define context for ws (subscriptions)
-          context.connection = connection;
-
-          subscriptions.context.call(context, connection);
-        } else {
-          //Define context for http (graphql)
-          context.request = req;
-          context.response = res;
-        }
-        await Promise.all(injectors.map(injector => injector(context)));
-
-        return context;
-      }
+      context: contextLoader(preContext, injectors, subscriptions)
     },
     {
-      schema,
+      resolvers: schema.resolvers,
+      typeDefs: schema.typeDefs,
+      schemaDirectives: schema.schemaDirectives,
       subscriptions
     }
   );

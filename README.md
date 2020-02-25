@@ -446,7 +446,7 @@ export default async function(config) {
     },
 
     //Custum PubSub can use (Redis based, Google, or your own system)
-    PubSub: new apolloServer.PubSub()
+    PubSub: apolloServer.PubSub
   };
 }
 ```
