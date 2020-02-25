@@ -468,7 +468,18 @@ export default async function(config) {
 
 Subscription are enabled by default on Apollon through the apollo-server implementation. Helper functions are available in resolver files through the `helpers` param. You can also access the `PubSub` object through the _context_ and the _preContext_.
 
+```gql
+type Query {
+  hello: Int!
+}
+
+type Subscription {
+  counter: Int!
+}
+```
+
 ```javascript
+// resolvers.js
 export default async function({ pubsub }, { subscriptions }) {
   let counter = 0;
 
