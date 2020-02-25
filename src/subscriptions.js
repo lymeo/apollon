@@ -14,5 +14,5 @@ export default async function(config, subscriptionsPath) {
 
   this.pubsub = new (PubSub || PubSubDefault)();
 
-  return { onConnect, onDisconnect, context };
+  return { onConnect: onConnect, onDisconnect, context };
 }

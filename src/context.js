@@ -6,7 +6,9 @@ export default (preContext, injectors, subscriptions) =>
       //Define context for ws (subscriptions)
       context.connection = connection;
 
-      subscriptions.context.call(context, connection);
+      if (subscriptions.context) {
+        subscriptions.context.call(context, connection);
+      }
     } else {
       //Define context for http (graphql)
       context.request = req;
