@@ -134,7 +134,7 @@ The implementation files are written using Apollo (https://www.apollographql.com
 
 ```javascript
 // resolvers.js
-export async function(helpers){
+export async function(preContext, helpers){
     let n = 0
 
     this.Mutation.test = (parent, params, context, info) => {n+=1; return n};
