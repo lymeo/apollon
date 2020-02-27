@@ -103,11 +103,9 @@ export default async function(config, project_root) {
     }
   }
 
-  logger.debug(`- Making executable`);
-  if (Object.keys(resolvers.Query).length == 0) {
-    delete resolvers.Query;
-    logger.debug("-- Removed the empty query field from executable schema");
-  }
+  //Implement _service query to avoid users having to create dummy query
+  resolvers.Query._service = _ => config.service || "GraphQL API";
+
   if (Object.keys(resolvers.Mutation).length == 0) {
     delete resolvers.Mutation;
     logger.debug("-- Removed the empty mutation field from executable schema");

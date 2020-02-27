@@ -12,7 +12,14 @@ export default async function(config, subscriptionsPath) {
 
   const { PubSub, onConnect, onDisconnect, context } = customSubscriptions;
 
-  this.pubsub = new (PubSub || PubSubDefault)();
+  try {
+    this.pubsub = new (PubSub || PubSubDefault)();
+  } catch (err) {
+    this.logger.error(
+      "Custum PubSubs have to be implementations (awaiting constructor) of PubSubEngine from https://www.apollographql.com/docs/apollo-server/data/subscriptions/#pubsub-implementations"
+    );
+    process.exit(-1);
+  }
 
   return { onConnect: onConnect, onDisconnect, context };
 }

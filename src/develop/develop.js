@@ -81,7 +81,7 @@ const start = async p_config => {
   };
 
   //Setting up subscriptionssubscriptionsLoader
-  logger.info("Setting up subscriptions");
+  logger.debug("Setting up subscriptions");
   const [filepath] = glob.sync(config.sources.subscriptions).map(p_filepath => {
     return path.join(process.cwd(), p_filepath);
   });
@@ -92,7 +92,7 @@ const start = async p_config => {
   );
 
   // Setting up schema
-  logger.info("Building executable schema");
+  logger.info("Retrieving schema components");
   const schema = await schemaLoader.call(preContext, config);
   preContext.schema = schema;
 
@@ -156,12 +156,9 @@ const start = async p_config => {
       .sort((a, b) => a.wrapperHelpers.priority - b.wrapperHelpers.priority, 0)
   );
 
-  logger.info("Apollon is starting");
-  app.use(cors(config.cors));
-
   const injectors = [];
 
-  logger.debug("Retrieving injectors for context injection from plugins");
+  logger.debug("- Retrieving injectors for context injection from plugins");
   for (let pluginName in plugins) {
     if (
       plugins[pluginName].injectors &&
@@ -170,6 +167,9 @@ const start = async p_config => {
       injectors.push(...plugins[pluginName].injectors);
     }
   }
+
+  logger.info("Apollon is starting");
+  app.use(cors(config.cors));
 
   const serverOptions = Object.assign(
     config.apollo || {
@@ -204,7 +204,7 @@ const start = async p_config => {
     app,
     path: config.endpoint || "/"
   });
-  logger.debug("- Initialised the main endpoint", {
+  logger.debug("- Configured the main endpoint", {
     endpoint: config.endpoint || "/"
   });
 
@@ -215,10 +215,10 @@ const start = async p_config => {
 
   httpServer.listen(PORT, () => {
     logger.info(
-      `Apollon main endpoint is ready at http://localhost:${PORT}${server.graphqlPath}`
+      `- main endpoint is ready at http://localhost:${PORT}${server.graphqlPath}`
     );
     logger.info(
-      `Apollon subscriptions endpoint is ready at ws://localhost:${PORT}${server.subscriptionsPath}`
+      `- subscriptions endpoint is ready at ws://localhost:${PORT}${server.subscriptionsPath}`
     );
   });
 
