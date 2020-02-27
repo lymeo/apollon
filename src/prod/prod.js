@@ -73,14 +73,16 @@ const start = async p_config => {
 
   //Setting up subscriptionssubscriptionsLoader
   logger.info("Setting up subscriptions");
-  const subscriptions = await subscriptionsLoader.call(
-    preContext,
-    config,
-    path.join(
-      process.cwd(),
-      config.$apollon_project_implementations.subscriptions
-    )
-  );
+  if (config.$apollon_project_implementations.subscriptions) {
+    const subscriptions = await subscriptionsLoader.call(
+      preContext,
+      config,
+      path.join(
+        process.cwd(),
+        config.$apollon_project_implementations.subscriptions
+      )
+    );
+  }
 
   // Setting up schema
   logger.info("Building executable schema");
