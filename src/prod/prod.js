@@ -73,8 +73,9 @@ const start = async p_config => {
 
   //Setting up subscriptionssubscriptionsLoader
   logger.info("Setting up subscriptions");
+  const subscriptions;
   if (config.$apollon_project_implementations.subscriptions) {
-    const subscriptions = await subscriptionsLoader.call(
+    subscriptions = await subscriptionsLoader.call(
       preContext,
       config,
       path.join(
