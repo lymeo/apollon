@@ -167,7 +167,8 @@ const start = async p_config => {
         logger.error(e);
         return e;
       },
-      context: contextLoader(preContext, injectors, subscriptions)
+      context: contextLoader(preContext, injectors, subscriptions),
+      playground: false
     },
     {
       resolvers: schema.resolvers,
