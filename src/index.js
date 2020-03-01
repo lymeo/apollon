@@ -1,62 +1,34 @@
 import { dirname } from "path";
 import { fileURLToPath } from "url";
-import deepMerge from "./helpers/deepMerge.js";
 
-const envDictionary = {
-  dev: "develop",
-  develop: "develop",
-  development: "develop",
-  production: "prod",
-  prod: "prod",
-  build: "build"
+//Custom imports
+import ENVIRONMENT from "./utils/getEnv.js";
+
+let config = {
+  ENV: ENVIRONMENT
 };
+let preContext;
 
-global.ENV = (
-  process.env.APOLLON_ENV ||
-  process.env.NODE_ENV ||
-  "dev"
-).toLowerCase();
-
-if (!envDictionary[global.ENV]) {
-  global.ENV = "dev";
-}
-
-let config = {};
-let context;
-
-// Helper functions for setting root
+// # Helper functions for setting root
 const setRootFromUrl = function(url) {
   config.root = dirname(fileURLToPath(url));
 };
 
-start.fromUrl = async function(url) {
+/**
+ * Function enabling to configure the root url and start Apollon
+ * @param {String} url // Defines the root directory for resolving file paths in Apollon (generally import.meta.url)
+ */
+async function startFromUrl(url) {
   setRootFromUrl(url);
   return await start();
-};
-
-async function start() {
-  const env = await import(
-    `./${[envDictionary[global.ENV]]}/${[envDictionary[global.ENV]]}.js`
-  );
-
-  let bootData = await env.default(config);
-
-  if (bootData.context) {
-    context = bootData.context;
-  }
-
-  if (bootData.config) {
-    config = bootData.config;
-  }
-
-  return bootData;
 }
 
+// # Controlled getters
 function getConfig() {
   return config;
 }
 
-function getContext() {
+function getPreContext() {
   if (context) {
     return context;
   } else {
@@ -65,7 +37,21 @@ function getContext() {
 }
 
 function getEnv() {
-  return global.ENV;
+  return ENVIRONMENT;
 }
 
-export { start, setRootFromUrl, getConfig, getContext, getEnv };
+/**
+ * Launches apollon server
+ * @returns {undefined}
+ */
+async function start() {
+  const env = await import(`./${ENVIRONMENT}.js`);
+
+  preContext = await env.default(config);
+
+  return preContext;
+}
+start.fromUrl = startFromUrl;
+
+export { start, setRootFromUrl, getConfig, getPreContext, getEnv };
+export default { start, setRootFromUrl, getConfig, getPreContext, getEnv };

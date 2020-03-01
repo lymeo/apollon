@@ -1,12 +1,14 @@
 import apollo_server_express from "apollo-server-express";
 const { withFilter } = apollo_server_express;
 
-export default function(schema, config, { pubsub }) {
+export default async function(resolvers) {
+  const { PubSub } = this;
+
   function channel(name) {
     return {
       publish(data, metadata) {
         if (name && name != "") {
-          pubsub.publish(
+          PubSub.publish(
             name,
             Object.assign({}, metadata, {
               [name]: data
@@ -19,14 +21,14 @@ export default function(schema, config, { pubsub }) {
 
   function create(name, ...filters) {
     let subscribe = () => {
-      return pubsub.asyncIterator(name);
+      return PubSub.asyncIterator(name);
     };
     if (filters) {
       subscribe = withFilter(subscribe, (payload, variables) => {
         return !filters.some(filter => !filter(payload, variables));
       });
     }
-    schema.Subscription[name] = {
+    resolvers.Subscription[name] = {
       subscribe
     };
 

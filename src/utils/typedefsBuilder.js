@@ -1,7 +1,10 @@
 import fse from "fs-extra";
 import graphqlMerge from "merge-graphql-schemas";
 
-export default async function(filepaths, plugins) {
+export default async function() {
+  const plugins = this.plugins;
+  const filepaths = this.config.$apollon_project_implementations.schema;
+
   const typeDefs = await Promise.all(
     filepaths.map(filepath => fse.readFile(filepath, "utf8"))
   );

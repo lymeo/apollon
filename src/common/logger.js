@@ -15,7 +15,7 @@ function requestSerializer(request) {
   return tmp;
 }
 
-export default bunyan.createLogger({
+const logger = bunyan.createLogger({
   name: "apollon",
   level,
   serializers: {
@@ -24,3 +24,19 @@ export default bunyan.createLogger({
     err: bunyan.stdSerializers.err
   }
 });
+
+//Setting up child logger
+logger.trace("Setting up logging");
+let childLogger = logger.child({ scope: "userland" });
+childLogger.domain = function(obj, potMessage) {
+  const domain = { scope: "domain" };
+  if (potMessage) {
+    childLogger.info(Object.assign(obj, domain), potMessage);
+  } else {
+    childLogger.info(domain, obj);
+  }
+};
+
+logger._childLogger = childLogger;
+
+export default logger;

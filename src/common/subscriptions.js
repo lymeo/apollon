@@ -1,13 +1,16 @@
 import apollo_server_express from "apollo-server-express";
 const PubSubDefault = apollo_server_express.PubSub;
 
-export default async function(config, subscriptionsPath) {
+export default async function() {
+  const subscriptionsPath = this.config.$apollon_project_implementations
+    .subscriptions;
+
   let customSubscriptions = {};
 
   if (subscriptionsPath) {
     //Import customSubscriptions
     const customSubscriptionsFn = await import(subscriptionsPath);
-    customSubscriptions = await customSubscriptionsFn.default(config);
+    customSubscriptions = await customSubscriptionsFn.default.call(this);
   }
 
   const { PubSub, onConnect, onDisconnect, context } = customSubscriptions;
