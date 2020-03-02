@@ -35,12 +35,6 @@ export default async function() {
   }
 
   /*
-    ### Typedefs
-  */
-  this.logger.debug("- Building typedefs: full GraphQL schema");
-  const typeDefs = await typedefsBuilder.call(this);
-
-  /*
     ### Resolvers
   */
   this.logger.debug(
@@ -117,7 +111,6 @@ export default async function() {
 
   return {
     resolvers,
-    typeDefs,
     schemaDirectives
   };
 }

@@ -2,8 +2,8 @@ const ENVS = {
   dev: "develop",
   develop: "develop",
   development: "develop",
-  production: "prod",
-  prod: "prod",
+  production: "production",
+  prod: "production",
   build: "build"
 };
 

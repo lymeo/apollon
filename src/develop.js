@@ -50,13 +50,17 @@ export default async function(config) {
   const subscriptions = await subscriptionsLoader.call(preContext);
   logger.trace("- Subscriptions", subscriptions);
 
-  // Setting up schema
+  // Setting up resolvers
   logger.info("- Retrieving schema components");
   const schema = await schemaBuilder.call(preContext);
   preContext.schema = schema;
-  logger.trace({ typeDefs: schema.typeDefs }, "--- Typedefs");
   logger.trace("--- Resolvers", schema.resolvers);
   logger.trace(schema.schemaDirectives, "--- Directives");
+
+  // Compiling typeDefs
+  this.logger.info("- Compiling typeDefs (schema/specification");
+  schema.typeDefs = await typedefsBuilder.call(this);
+  logger.trace({ typeDefs: schema.typeDefs }, "--- Typedefs");
 
   // Preparing connectors
   logger.info("- Loading connectors");

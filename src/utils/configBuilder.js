@@ -22,7 +22,7 @@ export default async function() {
   if (await fse.exists("./apollon.yaml")) {
     Object.assign(
       this.config.apollon,
-      yaml.safeLoad(await fse.readFile("./.apollon.yaml", "utf8"))
+      yaml.safeLoad(await fse.readFile("./apollon.yaml", "utf8"))
     );
   }
 
@@ -37,6 +37,7 @@ export default async function() {
   // Resolve globs
   this.config.$apollon_project_implementations = {
     types: glob.sync(this.config.sources.types),
+    config: glob.sync(this.config.sources.config),
     directives: glob.sync(this.config.sources.directives),
     middleware: glob.sync(this.config.sources.middleware),
     resolvers: glob.sync(this.config.sources.resolvers),

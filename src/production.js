@@ -1,174 +1,108 @@
-import logger from "../logger.js";
-import pluginsLoader from "../plugins.js";
-import schemaLoader from "./schema.js";
-import contextLoader from "../context.js";
-import subscriptionsLoader from "../subscriptions.js";
-
-import path from "path";
-import fse from "fs-extra";
+//Third party libraries
 import express from "express";
-import cors from "cors";
-import bodyParser from "body-parser";
-import yaml from "js-yaml";
-import http from "http";
+import path from "path";
 
-// CJS compatibility
-import apollo_server_express from "apollo-server-express";
-const { ApolloServer } = apollo_server_express;
+//Custom
+import schemaBuilder from "./utils/schemaBuilder.js";
+import playgroundSettings from "./utils/playgroundSettings.js";
 
-let project_root = "./";
+import pluginsLoader from "./common/plugins.js";
+import subscriptionsLoader from "./common/subscriptions.js";
+import connectorsLoader from "./common/connectors.js";
+import injectorsLoader from "./common/injectors.js";
+import middlewareLoader from "./common/middleware.js";
+import contextLoader from "./common/context.js";
 
-// Bootstrapper function
-const start = async p_config => {
-  if (p_config && p_config.root) {
-    project_root = p_config.root;
-  }
-  logger.info("Welcome to Apollon");
-  logger.info("Apollon will start initializing");
+import logger from "./common/logger.js";
+import server from "./common/server.js";
 
-  const config = await fse.readJSON(path.join(project_root, "./config.json"));
+// Express app
+const app = express();
+
+export default async function(config) {
+  let preContext = { logger, config };
+  logger.info({ environment: config.ENV }, "Welcome to Apollon");
 
   // Changing CWD to match potential root configuration
-  logger.debug(`- Defining project root => ${project_root}`);
-  process.chdir(project_root.toString());
+  logger.debug(`- Defining project root => ${config.root}`);
+  process.chdir(config.root.toString());
 
-  config.apollon = config.apollon || {};
-  if (await fse.exists("./.apollon.yaml")) {
-    Object.assign(
-      config.apollon,
-      yaml.safeLoad(await fse.readFile("./.apollon.yaml", "utf8"))
-    );
-  }
+  // Manage config
+  logger.info("- Reading compiled configuration");
+  config = Object.assign(
+    {},
+    (await import(path.join(process.cwd(), "./config.js"))).default,
+    config
+  );
+  logger.trace("Final config", config);
 
-  //Setting up child logger
-  logger.debug("- Setting up logging");
-  let childLogger = logger.child({ scope: "userland" });
-  childLogger.domain = function(obj, potMessage) {
-    const domain = { scope: "domain" };
-    if (potMessage) {
-      childLogger.info(Object.assign(obj, domain), potMessage);
-    } else {
-      childLogger.info(domain, obj);
-    }
-  };
+  // Manage plugins
+  logger.info("- Loading plugins");
+  const { plugins, plugin_middlewares } = await pluginsLoader.call(preContext);
+  logger.trace("- Plugins", plugins);
+  logger.trace("- Plugin middlewares", plugin_middlewares);
 
-  //Manage plugins
-  const { plugins, plugin_middlewares } = await pluginsLoader(config);
-
-  //Setting up underlying web server
-  logger.info("Setting up connectivity");
-  logger.debug("- Setting up underlying web server");
-  const PORT = process.env.PORT || config.port || 3000;
-  const app = express();
-
-  logger.debug("- Creating preContext object");
-  const preContext = {
-    PORT,
-    ENDPOINT: config.endpoint || "/",
+  //Populate preContext
+  logger.info("- Building preContext");
+  Object.assign(preContext, {
+    PORT: process.env.PORT || config.port || 3000,
+    ENDPOINT: process.env.ENDPOINT || config.endpoint || "/",
     app,
     config,
-    logger: childLogger,
+    logger: logger._childLogger,
     plugins
-  };
+  });
 
-  //Setting up subscriptionssubscriptionsLoader
-  logger.info("Setting up subscriptions");
-  const subscriptions;
-  if (config.$apollon_project_implementations.subscriptions) {
-    subscriptions = await subscriptionsLoader.call(
-      preContext,
-      config,
-      path.join(
-        process.cwd(),
-        config.$apollon_project_implementations.subscriptions
-      )
-    );
-  }
+  //Setting up subscriptions
+  logger.info("- Getting subscriptions ready");
+  const subscriptions = await subscriptionsLoader.call(preContext);
+  logger.trace("- Subscriptions", subscriptions);
 
-  // Setting up schema
-  logger.info("Building executable schema");
-  const schema = await schemaLoader.call(preContext, config, project_root);
+  // Setting up resolvers
+  logger.info("- Retrieving resolver components");
+  const schema = await schemaBuilder.call(preContext);
+  preContext.schema = schema;
+  logger.trace("--- Resolvers", schema.resolvers);
+  logger.trace(schema.schemaDirectives, "--- Directives resolvers");
 
-  // Importing connectors
-  logger.debug("- Setting up Apollon connectors");
-  const connectors = {};
-  let connectorImports = (
-    await Promise.all(
-      config.$apollon_project_implementations.connectors.map(p_filepath => {
-        logger.debug({ filepath: p_filepath }, `-- Importing connector`);
-        return import(path.join(process.cwd(), p_filepath));
-      })
-    )
-  ).map(implementation => implementation.default);
+  // Compiling typeDefs
+  logger.info("- Compiling typeDefs (schema/specification");
+  schema.typeDefs = (
+    await import(path.join(process.cwd(), "./schema.js"))
+  ).default;
+  logger.trace({ typeDefs: schema.typeDefs }, "--- Typedefs");
+
+  // Preparing connectors
+  logger.info("- Loading connectors");
+  const connectors = await connectorsLoader.call(preContext);
   preContext.connectors = connectors;
+  logger.trace(connectors, "--- Connectors");
 
-  //Initialization of connectors
-  logger.debug("- Initialisation of the connectors");
-  for (let connector of connectorImports) {
-    if (!connector.name) throw "No name defined for connector";
-    connectors[connector.name] = connector.apply(preContext);
-  }
-  for (let pluginName in plugins) {
-    if (plugins[pluginName].connectors) {
-      for (let connectorName in plugins[pluginName].connectors) {
-        connectors[
-          (config.apollon.plugins[pluginName].connector_prefix || "") +
-            connectorName
-        ] = plugins[pluginName].connectors[connectorName].apply(preContext);
-      }
-    }
-  }
-  logger.debug("-- Waiting for connectors to initialize");
-  for (let connectorName in connectors) {
-    connectors[connectorName] = await connectors[connectorName];
-  }
-  logger.debug("-- Connectors initialized");
-
-  //Middleware
-  logger.debug("- Importing middlewares");
-  const middlewares = await Promise.all(
-    (
-      await Promise.all(
-        config.$apollon_project_implementations.middlewares.map(p_filepath => {
-          logger.debug({ filepath: p_filepath }, `-- Imported middleware`);
-          return import(path.join(process.cwd(), p_filepath));
-        })
-      )
-    )
-      .concat(plugin_middlewares.map(e => ({ default: e })))
-      .map(e => {
-        const wrapperHelpers = { priority: 0 };
-        const futurMiddleware = e.default.call(wrapperHelpers, preContext);
-        futurMiddleware.wrapperHelpers = wrapperHelpers;
-        return futurMiddleware;
-      })
-      .sort((a, b) => a.wrapperHelpers.priority - b.wrapperHelpers.priority, 0)
+  // Preparing middleware
+  logger.info("- Gathering middleware");
+  const middleware = await middlewareLoader.call(
+    preContext,
+    plugin_middlewares
   );
+  preContext.middleware = middleware;
+  logger.trace("--- middleware", middleware);
 
-  logger.info("Apollon is starting");
-  app.use(cors(config.cors));
+  // Preparing injectors
+  logger.info("- Preparing injectors");
+  const injectors = await injectorsLoader.call(preContext);
+  preContext.injectors = injectors;
+  logger.trace(injectors, "--- injectors");
 
-  const injectors = [];
-
-  logger.debug("Retrieving injectors for context injection from plugins");
-  for (let pluginName in plugins) {
-    if (
-      plugins[pluginName].injectors &&
-      config.apollon.plugins[pluginName].priviledged
-    ) {
-      injectors.push(...plugins[pluginName].injectors);
-    }
-  }
-
-  const serverOptions = Object.assign(
+  // Preparing server configuration
+  preContext.serverOptions = Object.assign(
     config.apollo || {
+      playground: false,
       debug: false,
       formatError: e => {
         logger.error(e);
         return e;
       },
-      context: contextLoader(preContext, injectors, subscriptions),
-      playground: false
+      context: contextLoader(preContext, injectors, subscriptions)
     },
     {
       resolvers: schema.resolvers,
@@ -178,40 +112,19 @@ const start = async p_config => {
     }
   );
 
-  const server = new ApolloServer(serverOptions);
-
-  app.use(config.endpoint || "/", bodyParser.json(), ...middlewares);
-
-  server.applyMiddleware({ app, path: config.endpoint || "/" });
-
-  logger.debug("- Initialised the main endpoint", {
-    endpoint: config.endpoint || "/"
-  });
-
-  const httpServer = http.createServer(app);
-  server.installSubscriptionHandlers(httpServer);
-
-  preContext.server = server;
-
+  // Manage priviledged
   for (let pluginName in plugins) {
     if (
       plugins[pluginName].priviledged &&
       config.apollon.plugins[pluginName].priviledged
     ) {
-      await plugins[pluginName].priviledged(preContext);
+      await plugins[pluginName].priviledged.call(preContext);
     }
   }
 
-  httpServer.listen(PORT, () => {
-    logger.info(
-      `Apollon main endpoint is ready at http://localhost:${PORT}${server.graphqlPath}`
-    );
-    logger.info(
-      `Apollon subscriptions endpoint is ready at ws://localhost:${PORT}${server.subscriptionsPath}`
-    );
-  });
+  // Manage server
+  logger.info({ environment: config.ENV }, "Apollon is ready to start");
+  await server.call(preContext, logger, middleware);
 
-  return { context: preContext, config };
-};
-
-export default start;
+  return preContext;
+}
