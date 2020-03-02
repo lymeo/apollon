@@ -1,6 +1,7 @@
 import fse from "fs-extra";
 import graphqlMerge from "merge-graphql-schemas";
 import path from "path";
+import logger from "../common/logger.js";
 
 export default async function() {
   const plugins = this.plugins;
@@ -23,5 +24,13 @@ export default async function() {
   _service: String!
 }`);
 
-  return graphqlMerge.mergeTypes(typeDefs, { all: true });
+  try {
+    return graphqlMerge.mergeTypes(typeDefs, { all: true });
+  } catch (err) {
+    logger.error(
+      err,
+      "An error occurred. This is often due to empty or malformed specification files"
+    );
+    process.exit(1);
+  }
 }

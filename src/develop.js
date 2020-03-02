@@ -4,6 +4,7 @@ import express from "express";
 //Custom
 import configBuilder from "./utils/configBuilder.js";
 import schemaBuilder from "./utils/schemaBuilder.js";
+import typedefsBuilder from "./utils/typedefsBuilder.js";
 import playgroundSettings from "./utils/playgroundSettings.js";
 
 import pluginsLoader from "./common/plugins.js";
@@ -58,8 +59,8 @@ export default async function(config) {
   logger.trace(schema.schemaDirectives, "--- Directives");
 
   // Compiling typeDefs
-  this.logger.info("- Compiling typeDefs (schema/specification");
-  schema.typeDefs = await typedefsBuilder.call(this);
+  logger.info("- Compiling typeDefs (schema/specification");
+  schema.typeDefs = await typedefsBuilder.call(preContext);
   logger.trace({ typeDefs: schema.typeDefs }, "--- Typedefs");
 
   // Preparing connectors

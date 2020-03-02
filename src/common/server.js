@@ -7,7 +7,14 @@ import apollo_server_express from "apollo-server-express";
 const { ApolloServer } = apollo_server_express;
 
 export default async function(logger, middleware) {
-  const server = new ApolloServer(this.serverOptions);
+  let server;
+  try {
+    server = new ApolloServer(this.serverOptions);
+  } catch (err) {
+    logger.error(err);
+    process.exit(1);
+  }
+
   this.app.use(cors(this.config.cors));
   this.app.use(this.config.endpoint || "/", bodyParser.json(), ...middleware);
   server.applyMiddleware({

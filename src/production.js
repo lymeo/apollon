@@ -4,7 +4,6 @@ import path from "path";
 
 //Custom
 import schemaBuilder from "./utils/schemaBuilder.js";
-import playgroundSettings from "./utils/playgroundSettings.js";
 
 import pluginsLoader from "./common/plugins.js";
 import subscriptionsLoader from "./common/subscriptions.js";

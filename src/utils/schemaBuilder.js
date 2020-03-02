@@ -1,29 +1,36 @@
 import path from "path";
-import typedefsBuilder from "./typedefsBuilder.js";
 import helperBootstrap from "../common/helpers.js";
+import logger from "../common/logger.js";
 
 export default async function() {
   /*
     ### Directives
   */
-  this.logger.debug(`- Compiling directive implementations`);
+  logger.debug(`- Compiling directive implementations`);
   let schemaDirectives = {};
-  let schemaDirectiveAsyncBuffer = [];
-  this.config.$apollon_project_implementations.directives.forEach(filepath => {
-    schemaDirectiveAsyncBuffer.push({
-      filepath,
-      impl: import(path.join(process.cwd(), filepath))
-    });
-    this.logger.trace({ filepath }, `-- Included directive implementation`);
-  });
+  let schemaDirectiveAsyncBuffer = this.config.$apollon_project_implementations.directives.map(
+    filepath => {
+      const impl = import(path.join(process.cwd(), filepath));
+      impl.filepath = filepath;
+      logger.trace({ filepath }, `-- Included directive implementation`);
+      return impl;
+    }
+  );
 
   //wait for all async imports and map them to schemaDirectives variable
   const directiveImplementations = await Promise.all(
-    schemaDirectiveAsyncBuffer.map(e => e.impl)
+    schemaDirectiveAsyncBuffer
   );
-  directiveImplementations.forEach(
-    (e, i) => (schemaDirectives[e.default.name] = e.default)
-  );
+  directiveImplementations.forEach((e, i) => {
+    if (e.default && e.default.name) {
+      schemaDirectives[e.default.name] = e.default;
+    } else {
+      logger.error(
+        `Directive (${schemaDirectiveAsyncBuffer[i].filepath}) could not be used. Please refer to documentation.`
+      );
+      process.exit(1);
+    }
+  });
 
   // Manage plugins directives
   for (let pluginName in this.plugins) {
@@ -37,17 +44,15 @@ export default async function() {
   /*
     ### Resolvers
   */
-  this.logger.debug(
-    "-- Created the schema for the resolvers from the types file"
-  );
+  logger.debug("-- Created the schema for the resolvers from the types file");
 
   let resolvers = { Query: {}, Mutation: {}, Subscription: {} };
-  this.logger.debug(
+  logger.debug(
     "-- Added the Query, Mutation and Subscription to the executable schema"
   );
 
   for (let filepath of this.config.$apollon_project_implementations.types) {
-    let type = (await import(path.join(process.cwd(), filepath))).default;
+    const type = (await import(path.join(process.cwd(), filepath))).default;
     if (type && type.name) {
       resolvers[type.name] = type;
     }
@@ -62,7 +67,7 @@ export default async function() {
     }
   }
 
-  this.logger.debug(`- Helpers`);
+  logger.debug(`- Helpers`);
   let helpers = await helperBootstrap.call(this, resolvers);
 
   for (let pluginName in this.plugins) {
@@ -74,15 +79,19 @@ export default async function() {
     }
   }
 
-  //Setting up directives by forwarding schema so that each directive can add its own implementation
-  this.logger.debug(`- Resolvers`);
+  //Setting up resolvers by forwarding schema so that each resolver can add its own implementation
+  logger.debug(`- Resolvers`);
   for (let filepath of this.config.$apollon_project_implementations.resolvers) {
-    await (await import(path.join(process.cwd(), filepath))).default.call(
-      resolvers,
-      this,
-      helpers
-    );
-    this.logger.debug({ filepath }, `-- Delegated to`);
+    let imp = (await import(path.join(process.cwd(), filepath))).default;
+    if (imp) {
+      await imp.call(resolvers, this, helpers);
+      logger.debug({ filepath }, `-- Delegated to`);
+    } else {
+      logger.warn(
+        { filepath },
+        `-- Supposed resolver file does not export a default async function`
+      );
+    }
   }
 
   //Manage resolvers in plugins
@@ -102,11 +111,11 @@ export default async function() {
 
   if (Object.keys(resolvers.Mutation).length == 0) {
     delete resolvers.Mutation;
-    this.logger.debug("-- Removed the empty mutation field from resolvers");
+    logger.debug("-- Removed the empty mutation field from resolvers");
   }
   if (Object.keys(resolvers.Subscription).length == 0) {
     delete resolvers.Subscription;
-    this.logger.debug("-- Removed the empty subscription field from resolvers");
+    logger.debug("-- Removed the empty subscription field from resolvers");
   }
 
   return {

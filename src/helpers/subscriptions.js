@@ -31,7 +31,6 @@ export default async function(resolvers) {
     resolvers.Subscription[name] = {
       subscribe
     };
-
     return channel(name);
   }
 
