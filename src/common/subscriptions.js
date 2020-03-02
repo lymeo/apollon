@@ -1,9 +1,13 @@
+import path from "path";
+
 import apollo_server_express from "apollo-server-express";
 const PubSubDefault = apollo_server_express.PubSub;
 
 export default async function() {
-  const subscriptionsPath = this.config.$apollon_project_implementations
-    .subscriptions;
+  const subscriptionsPath = path.join(
+    process.cwd(),
+    this.config.$apollon_project_implementations.subscriptions
+  );
 
   let customSubscriptions = {};
 

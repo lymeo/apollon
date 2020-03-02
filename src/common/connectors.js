@@ -1,8 +1,12 @@
+import path from "path";
+
 export default async function() {
   // Importing connectors
   this.logger.debug("--- Setting up Apollon connectors");
   const connectorImports = await Promise.all(
-    this.config.$apollon_project_implementations.connectors.map(p => import(p))
+    this.config.$apollon_project_implementations.connectors.map(p =>
+      import(path.join(process.cwd(), p))
+    )
   );
 
   //Initialization of connectors

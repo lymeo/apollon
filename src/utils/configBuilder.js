@@ -16,7 +16,6 @@ export default async function() {
   // Changing CWD to match potential root configuration
   this.logger.debug(`- Defining project root => ${this.config.root}`);
   process.chdir(this.config.root.toString());
-  const cwd = process.cwd();
 
   // Loading config in Apollon file (apollon.yaml)
   this.config.apollon = this.config.apollon || {};
@@ -37,32 +36,14 @@ export default async function() {
 
   // Resolve globs
   this.config.$apollon_project_implementations = {
-    types: glob
-      .sync(this.config.sources.types)
-      .map(filepath => path.join(cwd, filepath)),
-    directives: glob
-      .sync(this.config.sources.directives)
-      .map(filepath => path.join(cwd, filepath)),
-    middleware: glob
-      .sync(this.config.sources.middleware)
-      .map(filepath => path.join(cwd, filepath)),
-    resolvers: glob
-      .sync(this.config.sources.resolvers)
-      .map(filepath => path.join(cwd, filepath)),
-    helpers: glob
-      .sync(this.config.sources.helpers)
-      .map(filepath => path.join(cwd, filepath)),
-    subscriptions: glob
-      .sync(this.config.sources.subscriptions)
-      .map(filepath => path.join(cwd, filepath))[0],
-    connectors: glob
-      .sync(this.config.sources.connectors)
-      .map(filepath => path.join(cwd, filepath)),
-    injectors: glob
-      .sync(this.config.sources.injectors)
-      .map(filepath => path.join(cwd, filepath)),
-    schema: glob
-      .sync(this.config.sources.schema)
-      .map(filepath => path.join(cwd, filepath))
+    types: glob.sync(this.config.sources.types),
+    directives: glob.sync(this.config.sources.directives),
+    middleware: glob.sync(this.config.sources.middleware),
+    resolvers: glob.sync(this.config.sources.resolvers),
+    helpers: glob.sync(this.config.sources.helpers),
+    subscriptions: glob.sync(this.config.sources.subscriptions)[0],
+    connectors: glob.sync(this.config.sources.connectors),
+    injectors: glob.sync(this.config.sources.injectors),
+    schema: glob.sync(this.config.sources.schema)
   };
 }

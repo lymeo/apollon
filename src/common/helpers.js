@@ -1,4 +1,5 @@
 import subscriptionsHelper from "../helpers/subscriptions.js";
+import path from "path";
 
 export default async function(resolvers) {
   const helpers = {};
@@ -9,7 +10,9 @@ export default async function(resolvers) {
 
   // Manage custom helpers
   const helperImports = await Promise.all(
-    this.config.$apollon_project_implementations.helpers.map(p => import(p))
+    this.config.$apollon_project_implementations.helpers.map(p =>
+      import(path.join(process.cwd(), p))
+    )
   );
 
   //Initialization of helpers

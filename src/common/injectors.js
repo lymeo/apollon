@@ -1,9 +1,13 @@
+import path from "path";
+
 export default async function() {
   const injectors = [];
   // Importing connectors
   this.logger.debug("--- Setting up injectors");
   const injectorImports = await Promise.all(
-    this.config.$apollon_project_implementations.injectors.map(p => import(p))
+    this.config.$apollon_project_implementations.injectors.map(p =>
+      import(path.join(process.cwd(), p))
+    )
   );
 
   //Initialization of injectors

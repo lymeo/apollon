@@ -1,5 +1,4 @@
 import path from "path";
-
 import typedefsBuilder from "./typedefsBuilder.js";
 import helperBootstrap from "../common/helpers.js";
 
@@ -11,7 +10,10 @@ export default async function() {
   let schemaDirectives = {};
   let schemaDirectiveAsyncBuffer = [];
   this.config.$apollon_project_implementations.directives.forEach(filepath => {
-    schemaDirectiveAsyncBuffer.push({ filepath, impl: import(filepath) });
+    schemaDirectiveAsyncBuffer.push({
+      filepath,
+      impl: import(path.join(process.cwd(), filepath))
+    });
     this.logger.trace({ filepath }, `-- Included directive implementation`);
   });
 
@@ -51,7 +53,7 @@ export default async function() {
   );
 
   for (let filepath of this.config.$apollon_project_implementations.types) {
-    let type = (await import(filepath)).default;
+    let type = (await import(path.join(process.cwd(), filepath))).default;
     if (type && type.name) {
       resolvers[type.name] = type;
     }
@@ -81,7 +83,11 @@ export default async function() {
   //Setting up directives by forwarding schema so that each directive can add its own implementation
   this.logger.debug(`- Resolvers`);
   for (let filepath of this.config.$apollon_project_implementations.resolvers) {
-    await (await import(filepath)).default.call(resolvers, this, helpers);
+    await (await import(path.join(process.cwd(), filepath))).default.call(
+      resolvers,
+      this,
+      helpers
+    );
     this.logger.debug({ filepath }, `-- Delegated to`);
   }
 

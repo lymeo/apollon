@@ -1,9 +1,11 @@
+import path from "path";
+
 export default async function(plugin_middlewares) {
   const middleware = await Promise.all(
     (
       await Promise.all(
         this.config.$apollon_project_implementations.middleware.map(p =>
-          import(p)
+          import(path.join(process.cwd(), p))
         )
       )
     )
