@@ -1,11 +1,14 @@
-# Apollon: an Apollo/Express based GraphQl server
+# Apollon
 
-1. Getting started (step by step)
-2. Getting started from template
-3. The logs
-4. Files
-5. Plugins
-6. Building and prod
+1. [Getting started (step by step)](#getting-started-step-by-step)
+2. [Getting started from template](#getting-started-from-template)
+3. [Quick dive](#quick-dive)
+4. [Files](#files)
+5. [The logs](#the-logs)
+6. [Plugins](#plugins)
+7. [Building and production](#building-and-production)
+8. [API documentation](#api-documentation)
+9. [Usefull links](#usefull-links)
 
 ## Getting started (step by step)
 
@@ -16,7 +19,7 @@ npm init
 npm install @lymeodev/apollon
 ```
 
-Apollon 2.0 uses native ESM and so to begin you need to import Apollon in your main file. You then need to tell Apollon where your project root is so it can automatically detect your files. The last step is to start Apollon. It is that easy!
+Apollon 3.0 uses native ESM and so to begin you need to import Apollon in your main file. You then need to tell Apollon where your project root is so it can automatically detect your files. The last step is to start Apollon. It is that easy!
 
 Here is an example:
 
@@ -67,6 +70,35 @@ npm i
 node index.js
 ```
 
+## Quick dive
+
+### Introduction
+
+Apollon enables you to simply create a GraphQl service/project/API. Most of the complexe GraphQl stuff is managed by [**Apollo**](https://www.apollographql.com/docs/apollo-server/) and not **Apollon**. Apollon's main responsability is to identify, load and then manage files. All are not necessary but there are two basic file types: specification files and the implementation files.
+
+The contents of these files are somewhat normalized so that they can be easily used and understood by Apollon and as of version 3 Apollon identifies 8 different file types:
+
+1. [Specification/Schema files](#specificationschema-files) are used to define the GraphQL schema which happens to be the specification of our API.
+2. [Implementation/resolvers files](#implementationresolvers-files) are used to implement the specification by creating the resolvers.
+3. [Config files](#config-files) enable to define the settings in Apollon
+4. [Connector files](#connector-files) enable to implement connectors (drivers) to access data or storage inside your resolver files
+5. [Directive files](#directive-files) are used to define GraphQL directive implementations
+6. [Helper files](#helper-files) also enables forwarding implementation to the resolver files
+7. [Injector files](#injector-files) are used to change the statefull context object as explained below.
+8. [Middleware files](#middleware-files) are used to change the express request, response objects and can catch requests before they enter GraphQl realm.
+
+> Each file is identified by a pattern similar to a regular expression. The default pattern is specified in the associated file documentation in this file.
+
+### Concepts and principles
+
+In these different files 3 objects are widely accessible in Apollon:
+
+1. The `preContext` object (extensive API [here](#precontext-api))
+2. The `context` object (extensive API [here](#context-api))
+3. The `helpers` object (extensive API [here](#helpers-api))
+
+> The `preContext` object and `context` are very similar. `preContext` is created when Apollon starts. On ea there is a request (_http_ or _ws_) data/implementations are added to a copy of `preContext` called `context`.
+
 ## The logs
 
 Apollon uses Bunyan as the native logging mecanism. To view logs in a "pretty" manner you can install bunyan with npm
@@ -89,25 +121,14 @@ env LOG_LEVEL="DEBUG" node index.js | bunyan
 
 ## Files
 
-### Introduction
-
-Apollon simplifies GraphQl API development mainly by loading and managing files for you. Different files are needed to make your API function and are used at different moments. All are not necessary but there are two basic file types: specification files and the implementation files.
-
-> The clean seperation between specification and implementation is one of GraphQl great strengths
-
-These files are loaded based on glob rules defined in the config (`config.sources`) and defaults to the values specified in each section below.
-
 ### Specification/schema files
 
 ```javascript
 // Default rules
-config.sources.schema = "{"
-                     //Match rules
-                     + "schema/**/*.gql,"
-                     + "*.gql,"
-
-                     //Exclude rules
-                     + "!(node_modules/**/**)" + "}",
+config.sources.schema = "{" +
+  "schema/**/*.gql,*.gql," + //Match rules
+  "!(node_modules/**/**),!(dist/**/**)" +  //Exclude rules
+  "}",
 
 ```
 
@@ -119,14 +140,8 @@ The specification files in apollon contains fragments of the standard GraphQL sc
 // Default rules
 config.sources.resolvers =
   "{" +
-  //Match rules
-  "resolvers/**/*.js," +
-  "*.resolver.js," +
-  "resolver.js," +
-  "*.resolvers.js," +
-  "resolvers.js," +
-  //Exclude rules
-  "!(node_modules/**/**)" +
+  "resolvers/**/*.js,*.resolvers.js,resolvers.js," + //Match rules
+  "!(node_modules/**/**),!(dist/**/**)" + //Exclude rules
   "}";
 ```
 
@@ -144,19 +159,17 @@ export async function(preContext, helpers){
 }
 ```
 
+> Most functions/files in Apollon can access the **preContext** object through `this` as is binded to the function. **THIS IS NOT THE CASE FOR RESOLVERS WHERE `this` IS BINDED TO THE RESOLVERS**
+
 ### Connector files
 
 ```javascript
 // Default rules
-config.sources.connectors = "{"
-                     //Match rules
-                     + "connectors/**/*.js,"
-                     + "*.connector.js,"
-                     + "*.connectors.js,"
-
-                     //Exclude rules
-                     + "!(node_modules/**/**)" + "}",
-
+config.sources.connectors =
+  "{" +
+  "connectors/**/*.js,*.connector.js," + //Match rules
+  "!(node_modules/**/**)" + //Exclude rules
+  "}";
 ```
 
 Connector files even though optional are really usefull building blocks for your GraphQl APIs. Connector files define a connector that can be used in Apollon files to access databases, file systems or any data source. Connectors can be seen like drivers.
@@ -197,13 +210,10 @@ You are free to implement the connector as you seem fit.
 
 ```javascript
 // Default rules
-config.sources.types = "{"
-                     //Match rules
-                     + "config/**/*.js,"
-                     + "*.config.js,"
-
-                     //Exclude rules
-                     + "!(node_modules/**/**)" + "}",
+config.sources.types = "{" +
+  "config/**/*.js,*.config.js,config.js," + //Match rules
+  "!(node_modules/**/**),!(dist/**/**)" + //Exclude rules
+  "}",
 
 ```
 
@@ -215,21 +225,22 @@ export default {
   plugins: [],
   root: "./",
 
+  production: {
+    logErrors: false
+  },
+
   //Glob patterns used as sources for the different files
   sources: {
-    resolvers:
-      "{resolvers/**/*.js,*.resolver.js,resolver.js,*.resolvers.js,resolvers.js,resolvers/**/*.mjs,*.resolver.mjs,resolver.mjs,*.resolvers.mjs,resolvers.mjs,!(node_modules/**/**)}",
-    connectors:
-      "{connectors/**/*.js,*.connector.js,,*.connectors.js,connectors/**/*.mjs,*.connector.mjs,,*.connectors.mjs,!(node_modules/**/**)}",
-    directives:
-      "{directives/**/*.js,*.directive.js*.directives.js,directives/**/*.mjs,*.directive.mjs*.directives.mjs,!(node_modules/**/**)}",
-    types:
-      "{types/**/*.js,*.type.js,*.types.js,types/**/*.mjs,*.type.mjs,*.types.mjs,!(node_modules/**/**)}",
-    schema: "{*.gql,schema/**/*.gql,!(node_modules)/*.gql}",
-    config:
-      "{config.js,config.mjs,*.config.js,*.config.mjs,config/**/*.js,config/**/*.mjs,!(node_modules/**/**)}",
-    middlewares:
-      "{middleware/**/*.js,middleware/**/*.mjs,*.mw.mjs,,*.mw.js,!(node_modules/**/**)}"
+    resolvers: `{resolvers/**/*.js,*.resolvers.js,resolvers.js,${SOURCES_BAN}}`,
+    connectors: `{connectors/**/*.js,*.connector.js,${SOURCES_BAN}}`,
+    injectors: `{injectors/**/*.js,${SOURCES_BAN}}`,
+    directives: `{directives/**/*.js,*.directive.js,${SOURCES_BAN}}`,
+    types: `{types/**/*.js,*.type.js,${SOURCES_BAN}}`,
+    helpers: `{helpers/**/*.js,*.helper.js,${SOURCES_BAN}}`,
+    schema: `{*.gql,schema/**/*.gql,${SOURCES_BAN}}`,
+    subscriptions: `subscriptions.js`,
+    config: `{config.js,*.config.js,config/**/*.js,${SOURCES_BAN}}`,
+    middleware: `{middleware/**/*.js,*.mw.js,${SOURCES_BAN}}`
   },
 
   //Default CORS settings
@@ -238,11 +249,6 @@ export default {
     methods: "GET,HEAD,PUT,PATCH,POST,DELETE",
     preflightContinue: false,
     optionsSuccessStatus: 204
-  },
-
-  //Apollo Server settings (apollo introspection can be set here)
-  apollo: {
-    debug: true
   }
 };
 ```
@@ -253,43 +259,48 @@ The configuration can be seperated into multiple files and will be deep merged t
 
 ```javascript
 // Default rules
-config.sources.types = "{"
-                     //Match rules
-                     + "middleware/**/*.js,"
-                     + "*.mw.js,"
-                     + "*.middleware.js,"
-
-                     //Exclude rules
-                     + "!(node_modules/**/**)" + "}",
+config.sources.types = "{" +
+  "middleware/**/*.js,*.mw.js,*.middleware.js," + //Match rules
+  "!(node_modules/**/**),!(dist/**/**)" + //Exclude rules
+  "}",
 
 ```
 
-Middleware files are used in the express app to catch and manage global http or GraphQL behavior. Authentication, file uploading and dynamic request modifications can be done using middleware. Middleware is implemented as follows:
+Middleware files are used in the express app to catch and manage global http or GraphQL behavior. Authentication, file uploading and dynamic request modifications can be done using middleware. Middleware are implemented as follows:
 
 ```javascript
 // authentication.mw.js
-export default async function middlewareWrapper(context) {
-  return async function authenticate(request, response, next) {
-    context.logger.debug("Hello world from middleware");
+export default async function middlewareWrapper(wrapperContext) {
+  return async (request, response, next) => {
+    this.logger.debug("Hello world from middleware");
     return next();
   };
 }
 ```
 
-The middleware is wrapped in an async function enabling dynamic generation of the express middleware and contextualised behavior through the context passed to the async function.
+The middleware is wrapped in an async function enabling dynamic generation of the express middleware and contextualised behavior through the **preContext** binded to the wrapper function (hence the access to logger in the example above).
+
+The wrapperContext is passed to the wrapper function enabling to define priority of the middleware as shown bellow:
+
+```javascript
+export default async function middlewareWrapper(wrapperContext) {
+  wrapperContext.priority = 3;
+
+  return async (request, response, next) => {
+    this.logger.debug("Hello world from middleware");
+    return next();
+  };
+}
+```
 
 ### Type implementation files
 
 ```javascript
 // Default rules
-config.sources.types = "{"
-                     //Match rules
-                     + "types/**/*.js,"
-                     + "*.type.js,"
-                     + "*.types.js,"
-
-                     //Exclude rules
-                     + "!(node_modules/**/**)" + "}",
+config.sources.types = "{" +
+  "types/**/*.js,*.type.js,*.types.js," + //Match rules
+  "!(node_modules/**/**),!(dist/**/**)" + //Exclude rules
+  "}",
 
 ```
 
@@ -342,18 +353,14 @@ export default new GraphQl.GraphQLScalarType({
 });
 ```
 
-### Directive implementation files
+### Directive files
 
 ```javascript
 // Default rules
-config.sources.types = "{"
-                     //Match rules
-                     + "directives/**/*.js,"
-                     + "*.directive.js,"
-                     + "*.directives.js,"
-
-                     //Exclude rules
-                     + "!(node_modules/**/**)" + "}",
+config.sources.types = "{" +
+  "directives/**/*.js,*.directive.js,*.directives.js," + //Match rules
+  "!(node_modules/**/**),!(dist/**/**)" + //Exclude rules
+  "}",
 ```
 
 Directive files enable to implement new directives and are implemented as follows:
@@ -374,9 +381,9 @@ class TriggerDirective extends GraphQlTools.SchemaDirectiveVisitor {
       let resolverResult = await resolve.call(this, parent, params, context);
 
       if (subName && subName != "") {
-        const { pubsub } = context;
+        const { pubSub } = context;
 
-        pubsub.publish(subName, {
+        pubSub.publish(subName, {
           [subName]: resolverResult
         });
       }
@@ -461,6 +468,73 @@ export default async function(config) {
       console.log("On connect");
     }
   };
+}
+```
+
+### Injector files
+
+```javascript
+// Default rules
+config.sources.injectors = "{" +
+  "injectors/**/*.js," + //Match rules
+  "!(node_modules/**/**),!(dist/**/**)" + //Exclude rules
+  "}",
+
+```
+
+Injectors are used to inject data or implementation into the context. Similar to middleware but in the GraphQl realm
+
+> Mutations enable to change low level http transport and are managed by express. They only have access to the `preContext` because they are executed just before the `context` object is created. On the other-hand Injectors are executed inside GraphQl realm and enable access to the `context` object.
+
+```javascript
+export default async function() {
+  return context => {
+    if (context.connection) {
+      //Subscription (ws)
+      this.logger.info("Subscribtion context injection");
+    } else {
+      //GraphQL Query/Mutation (http)
+      this.logger.info("Query/Mutation context injection");
+    }
+    context.user = manageUser();
+  };
+}
+```
+
+### Helper files
+
+```javascript
+// Default rules
+config.sources.helpers = "{" +
+  "helpers/**/*.js,*.mw.js," + //Match rules
+  "!(node_modules/**/**),!(dist/**/**)" + //Exclude rules
+  "}",
+
+```
+
+Helpers are one of the easiest files to understand. Helper files export an async function return an object that is added to the `helpers` global object.
+
+```javascript
+export default async function myHelpers() {
+  const logger = this.logger;
+  return {
+    hello() {
+      logger.info("Hello world!");
+    }
+  };
+}
+```
+
+And can be used as shown below
+
+```javascript
+export default async function({ logger }, helpers) {
+  function helloWorld() {
+    helpers.myHelpers.hello();
+    return "Hello world";
+  }
+
+  this.Query.hello = helloWorld;
 }
 ```
 
@@ -556,7 +630,7 @@ plugins:
 
 > For creating plugin please refer to https://github.com/lymeo/apollon-plugin-template
 
-## Building
+## Building and production
 
 An Apollon project can be built by defining the env variable `APOLLON_ENV` to `BUILD` as follows:
 
@@ -569,3 +643,22 @@ This should create a dist folder containing the optimised project ready for prod
 ```sh
 env APOLLON_ENV='PROD' node index.js
 ```
+
+## API documentation
+
+### preContext API
+
+> Needs more information
+
+### context API
+
+> Needs more information
+
+### helpers API
+
+> Needs more information
+
+# Usefull links
+
+- [Top of this page](#apollon)
+- [Apollo Server Documentation](https://www.apollographql.com/docs/apollo-server/)
