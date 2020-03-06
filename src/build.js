@@ -5,6 +5,7 @@ import path from "path";
 //Custom
 import configBuilder from "./utils/configBuilder.js";
 import schemaBuilder from "./utils/schemaBuilder.js";
+import typedefsBuilder from "./utils/typedefsBuilder.js";
 import pluginsLoader from "./common/plugins.js";
 import logger from "./common/logger.js";
 
