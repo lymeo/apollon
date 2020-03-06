@@ -36,9 +36,13 @@ const start = async config => {
   logger.info("- Retrieving schema components");
   const schema = await schemaBuilder.call(preContext);
   preContext.schema = schema;
-  logger.trace({ typeDefs: schema.typeDefs }, "--- Typedefs");
   logger.trace("--- Resolvers", schema.resolvers);
   logger.trace(schema.schemaDirectives, "--- Directives");
+
+  // Compiling typeDefs
+  logger.info("- Compiling typeDefs (schema/specification");
+  schema.typeDefs = await typedefsBuilder.call(preContext);
+  logger.trace({ typeDefs: schema.typeDefs }, "--- Typedefs");
 
   // Creating dist foleder
   logger.debug(`- Creating dist folder`);
