@@ -648,7 +648,23 @@ env APOLLON_ENV='PROD' node index.js
 
 ### preContext API
 
-> Needs more information
+> The `preContext` object is assemble during the Apollon's boot process. It enables access to different global objects as shown bellow.
+
+`.logger` enables you to access a Bunyan compatible logger used in Apollon. An additional `.logger.domain(msg, ...data)` has been added enabling to log domain events.
+
+`.config` is the final "merged" config object
+
+`.PORT` the final port used for the server
+
+`.ENDPOINT` the final endpoint the http API will be available
+
+`.app` the express app used to expose the API
+
+`.plugins` the different Apollon plugins loaded during boot process
+
+`.schema` the GraphQl schema containing the resolvers, schemaDirectives, typeDefs
+
+`.serverOptions` contains the server options sent to the GraphQL server Apollo and **not Apollon**
 
 ### context API
 

@@ -42,7 +42,6 @@ export default async function(config) {
     PORT: process.env.PORT || config.port || 3000,
     ENDPOINT: process.env.ENDPOINT || config.endpoint || "/",
     app,
-    config,
     logger: logger._childLogger,
     plugins
   });
