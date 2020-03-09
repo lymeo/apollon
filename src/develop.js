@@ -3,15 +3,16 @@ import express from "express";
 
 //Custom
 import configBuilder from "./utils/configBuilder.js";
-import schemaBuilder from "./utils/schemaBuilder.js";
 import typedefsBuilder from "./utils/typedefsBuilder.js";
 import playgroundSettings from "./utils/playgroundSettings.js";
 
 import pluginsLoader from "./common/plugins.js";
 import subscriptionsLoader from "./common/subscriptions.js";
+import resolversLoader from "./common/resolvers.js";
 import connectorsLoader from "./common/connectors.js";
 import injectorsLoader from "./common/injectors.js";
 import middlewareLoader from "./common/middleware.js";
+import directivesLoader from "./common/directives.js";
 import contextLoader from "./common/context.js";
 
 import logger from "./common/logger.js";
@@ -51,15 +52,20 @@ export default async function(config) {
   const subscriptions = await subscriptionsLoader.call(preContext);
   logger.trace("- Subscriptions", subscriptions);
 
-  // Setting up resolvers
-  logger.info("- Retrieving schema components");
-  const schema = await schemaBuilder.call(preContext);
+  // Setting up directives
+  const schema = {};
   preContext.schema = schema;
-  logger.trace("--- Resolvers", schema.resolvers);
+  logger.info("- Retrieving directive implementations");
+  schema.schemaDirectives = await directivesLoader.call(preContext);
   logger.trace(schema.schemaDirectives, "--- Directives");
 
+  // Setting up resolvers
+  logger.info("- Retrieving resolver implementations");
+  schema.resolvers = await resolversLoader.call(preContext);
+  logger.trace("--- Resolvers", schema.resolvers);
+
   // Compiling typeDefs
-  logger.info("- Compiling typeDefs (schema/specification");
+  logger.info("- Compiling typeDefs (schema/specification)");
   schema.typeDefs = await typedefsBuilder.call(preContext);
   logger.trace({ typeDefs: schema.typeDefs }, "--- Typedefs");
 

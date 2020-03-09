@@ -2,9 +2,6 @@
 import express from "express";
 import path from "path";
 
-//Custom
-import schemaBuilder from "./utils/schemaBuilder.js";
-
 import pluginsLoader from "./common/plugins.js";
 import subscriptionsLoader from "./common/subscriptions.js";
 import connectorsLoader from "./common/connectors.js";
@@ -57,15 +54,20 @@ export default async function(config) {
   const subscriptions = await subscriptionsLoader.call(preContext);
   logger.trace("- Subscriptions", subscriptions);
 
-  // Setting up resolvers
-  logger.info("- Retrieving resolver components");
-  const schema = await schemaBuilder.call(preContext);
+  // Setting up directives
+  const schema = {};
   preContext.schema = schema;
+  logger.info("- Retrieving directive implementations");
+  schema.schemaDirectives = await directivesLoader.call(preContext);
+  logger.trace(schema.schemaDirectives, "--- Directives");
+
+  // Setting up resolvers
+  logger.info("- Retrieving resolver implementations");
+  schema.resolvers = await resolversLoader.call(preContext);
   logger.trace("--- Resolvers", schema.resolvers);
-  logger.trace(schema.schemaDirectives, "--- Directives resolvers");
 
   // Compiling typeDefs
-  logger.info("- Compiling typeDefs (schema/specification");
+  logger.info("- Reading typeDefs (schema/specification");
   schema.typeDefs = (
     await import(path.join(process.cwd(), "./schema.js"))
   ).default;
