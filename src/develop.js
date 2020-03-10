@@ -16,7 +16,7 @@ import directivesLoader from "./common/directives.js";
 import contextLoader from "./common/context.js";
 
 import logger from "./common/logger.js";
-import server from "./common/server.js";
+import server from "./utils/server.js";
 
 // Express app
 const app = express();
