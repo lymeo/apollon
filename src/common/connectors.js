@@ -31,17 +31,5 @@ export default async function() {
     connectors[connector.default.name] = await connector.default.call(this);
   }
 
-  //Manage connectors from plugins
-  for (let pluginName in this.plugins) {
-    if (this.plugins[pluginName].connectors) {
-      for (let connectorName in this.plugins[pluginName].connectors) {
-        connectors[
-          (this.config.apollon.plugins[pluginName].connector_prefix || "") +
-            connectorName
-        ] = await this.plugins[pluginName].connectors[connectorName].call(this);
-      }
-    }
-  }
-
   return connectors;
 }

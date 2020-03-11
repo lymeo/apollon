@@ -4,7 +4,8 @@ import path from "path";
 
 //Custom
 import configBuilder from "./utils/configBuilder.js";
-import schemaBuilder from "./utils/schemaBuilder.js";
+import directivesLoader from "./common/directives.js";
+import resolversLoader from "./common/resolvers.js";
 import typedefsBuilder from "./utils/typedefsBuilder.js";
 import pluginsLoader from "./common/plugins.js";
 import logger from "./common/logger.js";
@@ -33,15 +34,20 @@ const start = async config => {
   logger.trace("- Plugins", plugins);
   logger.trace("- Plugin middlewares", plugin_middlewares);
 
-  // Setting up schema
-  logger.info("- Retrieving schema components");
-  const schema = await schemaBuilder.call(preContext);
+  // Setting up directives
+  const schema = {};
   preContext.schema = schema;
-  logger.trace("--- Resolvers", schema.resolvers);
+  logger.info("- Retrieving directive implementations");
+  schema.schemaDirectives = await directivesLoader.call(preContext);
   logger.trace(schema.schemaDirectives, "--- Directives");
 
+  // Setting up resolvers
+  logger.info("- Retrieving resolver implementations");
+  schema.resolvers = await resolversLoader.call(preContext);
+  logger.trace("--- Resolvers", schema.resolvers);
+
   // Compiling typeDefs
-  logger.info("- Compiling typeDefs (schema/specification");
+  logger.info("- Compiling typeDefs (schema/specification)");
   schema.typeDefs = await typedefsBuilder.call(preContext);
   logger.trace({ typeDefs: schema.typeDefs }, "--- Typedefs");
 
@@ -65,15 +71,17 @@ const start = async config => {
 
   logger.info("- Cleaning config files");
   await Promise.all(
-    config.$apollon_project_implementations.config.map(filepath =>
-      fse.unlink(path.join("./dist/", filepath))
-    )
+    config.$apollon_project_implementations.config
+      .filter(filepath => !/node_modules/gm.test(filepath))
+      .map(filepath => path.join("./dist/", filepath))
+      .map(filepath => fse.unlink(filepath))
   );
   logger.info("- Cleaning schema files");
   await Promise.all(
-    config.$apollon_project_implementations.schema.map(filepath =>
-      fse.unlink(path.join("./dist/", filepath))
-    )
+    config.$apollon_project_implementations.schema
+      .filter(filepath => !/node_modules/gm.test(filepath))
+      .map(filepath => path.join("./dist/", filepath))
+      .map(filepath => fse.unlink(filepath))
   );
 
   logger.info("- Outputting schemas");

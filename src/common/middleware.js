@@ -1,7 +1,7 @@
 import path from "path";
 import logger from "./logger.js";
 
-export default async function(plugin_middlewares) {
+export default async function() {
   const preContext = this;
 
   const middlewareWrappers = (
@@ -10,9 +10,7 @@ export default async function(plugin_middlewares) {
         import(path.join(process.cwd(), p))
       )
     )
-  )
-    .map(e => e.default)
-    .concat(plugin_middlewares);
+  ).map(e => e.default);
 
   const futurMiddleware = middlewareWrappers.map(wrapper => {
     if (!wrapper || !wrapper.call) {

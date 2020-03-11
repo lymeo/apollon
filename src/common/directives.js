@@ -25,14 +25,5 @@ export default async function() {
     }
   });
 
-  // Manage plugins directives
-  for (let pluginName in this.plugins) {
-    if (this.plugins[pluginName].directives) {
-      for (let directive of this.plugins[pluginName].directives) {
-        directives[directive.name] = directive;
-      }
-    }
-  }
-
   return directives;
 }

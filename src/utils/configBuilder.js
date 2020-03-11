@@ -5,16 +5,17 @@ import glob from "glob";
 import path from "path";
 
 //Custom
+import logger from "../common/logger.js";
 import deepMerge from "./deepMerge.js";
 import initialConfig from "./initialConfig.js";
 
 export default async function() {
   // Merge default values onto config
   deepMerge(this.config, initialConfig);
-  this.logger.trace("- Initial config merged onto manual config");
+  logger.trace("- Initial config merged onto manual config");
 
   // Changing CWD to match potential root configuration
-  this.logger.debug(`- Defining project root => ${this.config.root}`);
+  logger.debug(`- Defining project root => ${this.config.root}`);
   process.chdir(this.config.root.toString());
 
   // Loading config in Apollon file (apollon.yaml)
@@ -27,9 +28,9 @@ export default async function() {
   }
 
   // Loading other config files
-  this.logger.debug("- Preparing config");
+  logger.debug("- Preparing config");
   const configs = glob.sync(this.config.sources.config).map(filepath => {
-    this.logger.debug({ filepath }, `-- Importing config file`);
+    logger.debug({ filepath }, `-- Importing config file`);
     return import(path.join(process.cwd(), filepath));
   });
   deepMerge(this.config, ...(await Promise.all(configs)).map(e => e.default));

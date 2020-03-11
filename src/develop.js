@@ -32,9 +32,8 @@ export default async function(config) {
 
   // Manage plugins
   logger.info("- Loading plugins");
-  const { plugins, plugin_middlewares } = await pluginsLoader.call(preContext);
+  const plugins = await pluginsLoader.call(preContext);
   logger.trace("- Plugins", plugins);
-  logger.trace("- Plugin middlewares", plugin_middlewares);
 
   //Populate preContext
   logger.info("- Building preContext");
@@ -76,10 +75,7 @@ export default async function(config) {
 
   // Preparing middleware
   logger.info("- Gathering middleware");
-  const middleware = await middlewareLoader.call(
-    preContext,
-    plugin_middlewares
-  );
+  const middleware = await middlewareLoader.call(preContext);
   preContext.middleware = middleware;
   logger.trace("--- middleware", middleware);
 

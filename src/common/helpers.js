@@ -17,7 +17,7 @@ export default async function(resolvers) {
   );
 
   //Initialization of helpers
-  logger.debug("--- Initialisation of the helperss");
+  logger.debug("--- Initialisation of the helpers");
   for (let helper of helperImports) {
     if (!helper.default.name) throw "No name defined for connector";
     if (helper.default.name == "default" || helper.default.name == "")
