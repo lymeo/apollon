@@ -617,18 +617,30 @@ export async function(preContext, helpers){
 
 ## Plugins
 
-Plugins are simple npm modules exporting different elements that are then used in Apollon.
+Plugins are build Apollon projects that Apollon automatically retrieves it's ressources.
 
-They must be declared in the .apollon.yaml file where you can also configure the plugin like shown bellow:
+They must be declared in the apollon.yaml file where you can also configure the plugin like shown bellow:
 
 ```yaml
 plugins:
-  "@lymeodev/apollon-plugin-template":
-    # Settings
-    foo: bar
+  - name: apollon-plugin-mongo
 ```
 
-> For creating plugin please refer to https://github.com/lymeo/apollon-plugin-template
+There are two different ways to install plugins. You can install them as node modules through _git_ or _npm_ or you can install them locally in your project folder.
+
+```yaml
+plugins:
+  # Module plugins
+  - name: apollon-plugin-mongo
+
+  - name: apollon-plugin-redis
+    # settings/config
+    foo: bar
+    redis_usr: root
+
+  # Project folder plugin
+  - path: /plugins/apollon-plugin-mongo
+```
 
 ## Building and production
 
