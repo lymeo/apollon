@@ -70,8 +70,8 @@ export default async function() {
           plugin.ressources[type] = plugin.ressources[type].map(ppath =>
             path.join(plugin._rootPath, ppath)
           );
-          this.config.$apollon_project_implementations[type].concat(
-            plugin.ressources[type]
+          this.config.$apollon_project_implementations[type].push(
+            ...plugin.ressources[type]
           );
         }
       }

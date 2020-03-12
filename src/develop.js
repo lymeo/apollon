@@ -28,12 +28,12 @@ export default async function(config) {
   // Manage config
   logger.info("- Compiling configuration");
   await configBuilder.call(preContext);
-  logger.trace("Final config", config);
 
   // Manage plugins
   logger.info("- Loading plugins");
   const plugins = await pluginsLoader.call(preContext);
   logger.trace("- Plugins", plugins);
+  logger.trace("Final config", config);
 
   //Populate preContext
   logger.info("- Building preContext");
