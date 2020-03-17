@@ -60,6 +60,14 @@ const start = async config => {
   await fse.move("../.tmp.apollon.dist", "./dist");
   await fse.move("../.tmp.apollon.node_modules", "./node_modules");
 
+  logger.info("- Cleaning config files");
+  await Promise.all(
+    config.$apollon_project_implementations.config
+      .filter(filepath => !/node_modules/gm.test(filepath))
+      .map(filepath => path.join("./dist/", filepath))
+      .map(filepath => fse.unlink(filepath))
+  );
+
   logger.info("- Writting config");
   const confToWrite = Object.assign({}, config);
   delete confToWrite.root;
@@ -69,13 +77,6 @@ const start = async config => {
     `export default ${JSON.stringify(confToWrite)}`
   );
 
-  logger.info("- Cleaning config files");
-  await Promise.all(
-    config.$apollon_project_implementations.config
-      .filter(filepath => !/node_modules/gm.test(filepath))
-      .map(filepath => path.join("./dist/", filepath))
-      .map(filepath => fse.unlink(filepath))
-  );
   logger.info("- Cleaning schema files");
   await Promise.all(
     config.$apollon_project_implementations.schema
