@@ -9,6 +9,7 @@ import injectorsLoader from "./common/injectors.js";
 import middlewareLoader from "./common/middleware.js";
 import contextLoader from "./common/context.js";
 import directivesLoader from "./common/directives.js";
+import resolversLoader from "./common/resolvers.js";
 
 import logger from "./common/logger.js";
 import server from "./utils/server.js";
