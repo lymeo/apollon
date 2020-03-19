@@ -59,7 +59,7 @@ async function start() {
 
   preContext = await env.default(config);
 
-  await server.call(preContext);
+  await expose(preContext);
 
   return preContext;
 }
@@ -75,7 +75,9 @@ async function prepare() {
 prepare.fromUrl = prepareFromUrl;
 
 async function expose(preContext) {
-  await server.call(preContext);
+  if (preContext.serverOptions) {
+    await server.call(preContext);
+  }
 }
 
 export {
