@@ -1,12 +1,13 @@
 import bodyParser from "body-parser";
 import http from "http";
 import cors from "cors";
+import logger from "../common/logger.js";
 
 // CJS compatibility
 import apollo_server_express from "apollo-server-express";
 const { ApolloServer } = apollo_server_express;
 
-export default async function(logger, middleware) {
+export default async function() {
   let server;
   try {
     server = new ApolloServer(this.serverOptions);
@@ -16,7 +17,11 @@ export default async function(logger, middleware) {
   }
 
   this.app.use(cors(this.config.cors));
-  this.app.use(this.config.endpoint || "/", bodyParser.json(), ...middleware);
+  this.app.use(
+    this.config.endpoint || "/",
+    bodyParser.json(),
+    ...this.middleware
+  );
   server.applyMiddleware({
     app: this.app,
     path: this.config.endpoint || "/"

@@ -16,7 +16,6 @@ import directivesLoader from "./common/directives.js";
 import contextLoader from "./common/context.js";
 
 import logger from "./common/logger.js";
-import server from "./utils/server.js";
 
 // Express app
 const app = express();
@@ -116,7 +115,6 @@ export default async function(config) {
 
   // Manage server
   logger.info({ environment: config.ENV }, "Apollon is ready to start");
-  await server.call(preContext, logger, middleware);
 
   return preContext;
 }

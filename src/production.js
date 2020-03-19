@@ -127,7 +127,6 @@ export default async function(config) {
 
   // Manage server
   logger.info({ environment: config.ENV }, "Apollon is ready to start");
-  await server.call(preContext, logger, middleware);
 
   return preContext;
 }

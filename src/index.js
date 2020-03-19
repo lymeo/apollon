@@ -1,5 +1,6 @@
 import { dirname } from "path";
 import { fileURLToPath } from "url";
+import server from "./utils/server.js";
 
 //Custom imports
 import ENVIRONMENT from "./utils/getEnv.js";
@@ -23,6 +24,15 @@ async function startFromUrl(url) {
   return await start();
 }
 
+/**
+ * Function enabling to configure the root url and start Apollon
+ * @param {String} url // Defines the root directory for resolving file paths in Apollon (generally import.meta.url)
+ */
+async function prepareFromUrl(url) {
+  setRootFromUrl(url);
+  return await prepare();
+}
+
 // # Controlled getters
 function getConfig() {
   return config;
@@ -42,16 +52,47 @@ function getEnv() {
 
 /**
  * Launches apollon server
- * @returns {undefined}
+ * @returns preContext
  */
 async function start() {
   const env = await import(`./${ENVIRONMENT}.js`);
 
   preContext = await env.default(config);
 
+  await server.call(preContext);
+
   return preContext;
 }
 start.fromUrl = startFromUrl;
 
-export { start, setRootFromUrl, getConfig, getPreContext, getEnv };
-export default { start, setRootFromUrl, getConfig, getPreContext, getEnv };
+async function prepare() {
+  const env = await import(`./${ENVIRONMENT}.js`);
+
+  preContext = await env.default(config);
+
+  return preContext;
+}
+prepare.fromUrl = prepareFromUrl;
+
+async function expose(preContext) {
+  await server.call(preContext);
+}
+
+export {
+  start,
+  setRootFromUrl,
+  getConfig,
+  getPreContext,
+  getEnv,
+  prepare,
+  expose
+};
+export default {
+  start,
+  setRootFromUrl,
+  getConfig,
+  getPreContext,
+  getEnv,
+  prepare,
+  expose
+};
