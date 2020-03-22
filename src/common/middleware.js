@@ -12,21 +12,20 @@ export default async function() {
     )
   ).map(e => e.default);
 
-  const futurMiddleware = middlewareWrappers.map(wrapper => {
-    if (!wrapper || !wrapper.call) {
-      logger.error(
-        "The middleware file must export a function returning the final express middleware"
-      );
-      process.exit(1);
-    }
-    const wrapperInfo = { priority: 0 };
-    let middleware = wrapper.call(preContext, wrapperInfo);
-    middleware.info = wrapperInfo;
-    return middleware;
-  });
+  const futurMiddleware = middlewareWrappers
+    .map(wrapper => {
+      if (!wrapper || !wrapper.call) {
+        logger.error(
+          "The middleware file must export a function returning the final express middleware"
+        );
+        process.exit(1);
+      }
+      const wrapperInfo = { priority: 0 };
+      let middleware = wrapper.call(preContext, wrapperInfo);
+      middleware.wrapperInfo = wrapperInfo;
+      return middleware;
+    })
+    .sort((a, b) => a.wrapperInfo.priority - b.wrapperInfo.priority, 0);
 
-  return (await Promise.all(futurMiddleware)).sort(
-    (a, b) => a.wrapperHelpers.priority - b.wrapperHelpers.priority,
-    0
-  );
+  return await Promise.all(futurMiddleware);
 }
