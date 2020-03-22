@@ -1,3 +1,4 @@
+import path from "path";
 import logger from "./logger.js";
 
 export default async function() {
