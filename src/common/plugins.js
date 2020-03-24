@@ -3,7 +3,7 @@ import logger from "./logger.js";
 import fse from "fs-extra";
 
 export default async function() {
-  const plugins = [];
+  const plugins = {};
   if (this.config.apollon && this.config.apollon.plugins) {
     for (const pluginSource of this.config.apollon.plugins) {
       let plugin = Object.assign({}, pluginSource);
@@ -52,7 +52,6 @@ export default async function() {
         logger.error("--- The imported plugin is not a built Apollon project");
         process.exit(1);
       }
-      delete plugin._import;
 
       this.config.$apollon_project_implementations.schema.push(
         path.join(plugin._rootPath, "schema.gql")
@@ -76,7 +75,12 @@ export default async function() {
         }
       }
 
-      plugins.push(plugin);
+      if (plugin._import.default.pluginName) {
+        plugins[plugin._import.default.pluginName] = plugin;
+      } else {
+        logger.warn("Plugin has no name", plugin._import.default);
+      }
+      delete plugin._import;
     }
   }
   return plugins;
