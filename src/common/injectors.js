@@ -23,15 +23,5 @@ export default async function() {
     injectors.push(await injector.default.call(this));
   }
 
-  logger.debug("--- Retrieving injectors for context injection from plugins");
-  for (let pluginName in this.plugins) {
-    if (
-      this.plugins[pluginName].injectors &&
-      this.config.apollon.plugins[pluginName].priviledged
-    ) {
-      injectors.push(...this.plugins[pluginName].injectors);
-    }
-  }
-
   return injectors;
 }

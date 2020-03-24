@@ -20,26 +20,8 @@ export default async function() {
     }
   }
 
-  //Manage types defined in plugins
-  for (let pluginName in this.plugins) {
-    if (this.plugins[pluginName].types) {
-      for (let typeName in this.plugins[pluginName].types) {
-        resolvers[typeName] = this.plugins[pluginName].types[typeName];
-      }
-    }
-  }
-
   logger.debug(`- Helpers`);
   let helpers = await helperBootstrap.call(this, resolvers);
-
-  for (let pluginName in this.plugins) {
-    if (this.plugins[pluginName].helpers) {
-      helpers[pluginName] = await this.plugins[pluginName].helpers.call(
-        this,
-        resolvers
-      );
-    }
-  }
 
   //Setting up resolvers by forwarding schema so that each resolver can add its own implementation
   logger.debug(`- Resolvers`);
@@ -52,17 +34,6 @@ export default async function() {
       logger.warn(
         { filepath },
         `-- Supposed resolver file does not export a default async function`
-      );
-    }
-  }
-
-  //Manage resolvers in plugins
-  for (let pluginName in this.plugins) {
-    if (this.plugins[pluginName].resolvers) {
-      Promise.all(
-        this.plugins[pluginName].resolvers.map(resolver =>
-          resolver.call(resolvers, this, helpers)
-        )
       );
     }
   }
