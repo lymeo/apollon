@@ -1,6 +1,7 @@
 import path from "path";
 import logger from "./logger.js";
 import fse from "fs-extra";
+import { pathToFileURL } from "url";
 
 export default async function() {
   const plugins = {};
@@ -34,7 +35,7 @@ export default async function() {
 
       try {
         plugin._import = await import(
-          path.join(process.cwd(), plugin._configPath)
+          pathToFileURL(path.join(process.cwd(), plugin._configPath))
         );
       } catch (e) {
         logger.error(e, "--- Could not import plugin");

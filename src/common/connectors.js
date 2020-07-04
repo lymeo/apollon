@@ -1,12 +1,13 @@
 import path from "path";
 import logger from "../common/logger.js";
+import { pathToFileURL } from "url";
 
 export default async function() {
   // Importing connectors
   logger.debug("--- Setting up Apollon connectors");
   const connectorImports = await Promise.all(
     this.config.$apollon_project_implementations.connectors.map(p =>
-      import(path.join(process.cwd(), p))
+      import(pathToFileURL(path.join(process.cwd(), p)))
     )
   );
 

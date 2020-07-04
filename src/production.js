@@ -1,6 +1,7 @@
 //Third party libraries
 import express from "express";
 import path from "path";
+import { pathToFileURL } from "url";
 
 import pluginsLoader from "./common/plugins.js";
 import subscriptionsLoader from "./common/subscriptions.js";
@@ -29,7 +30,8 @@ export default async function(config) {
   logger.info("- Reading compiled configuration");
   config = Object.assign(
     {},
-    (await import(path.join(process.cwd(), "./config.js"))).default,
+    (await import(pathToFileURL(path.join(process.cwd(), "./config.js"))))
+      .default,
     config
   );
   logger.trace("Final config", config);
@@ -70,9 +72,9 @@ export default async function(config) {
 
   // Compiling typeDefs
   logger.info("- Reading typeDefs (schema/specification");
-  schema.typeDefs = (
-    await import(path.join(process.cwd(), "./schema.js"))
-  ).default;
+  schema.typeDefs = (await import(
+    pathToFileURL(path.join(process.cwd(), "./schema.js"))
+  )).default;
   logger.trace({ typeDefs: schema.typeDefs }, "--- Typedefs");
 
   // Preparing connectors

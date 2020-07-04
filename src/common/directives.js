@@ -1,12 +1,13 @@
 import path from "path";
 import logger from "./logger.js";
+import { pathToFileURL } from "url";
 
 export default async function() {
   logger.debug(`- Compiling directive implementations`);
   let directives = {};
   let asyncBuffer = this.config.$apollon_project_implementations.directives.map(
     filepath => {
-      const impl = import(path.join(process.cwd(), filepath));
+      const impl = import(pathToFileURL(path.join(process.cwd(), filepath)));
       impl.filepath = filepath;
       logger.trace({ filepath }, `-- Included directive implementation`);
       return impl;

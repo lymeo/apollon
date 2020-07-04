@@ -1,4 +1,5 @@
 import path from "path";
+import { pathToFileURL } from "url";
 
 import apollo_server_express from "apollo-server-express";
 const PubSubDefault = apollo_server_express.PubSub;
@@ -8,9 +9,11 @@ export default async function() {
     this.PubSub = new PubSubDefault();
     return {};
   }
-  const subscriptionsPath = path.join(
-    process.cwd(),
-    this.config.$apollon_project_implementations.subscriptions
+  const subscriptionsPath = pathToFileURL(
+    path.join(
+      process.cwd(),
+      this.config.$apollon_project_implementations.subscriptions
+    )
   );
 
   let customSubscriptions = {};

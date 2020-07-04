@@ -1,16 +1,15 @@
 import path from "path";
 import logger from "./logger.js";
+import { pathToFileURL } from "url";
 
 export default async function() {
   const preContext = this;
 
-  const middlewareWrappers = (
-    await Promise.all(
-      this.config.$apollon_project_implementations.middleware.map(p =>
-        import(path.join(process.cwd(), p))
-      )
+  const middlewareWrappers = (await Promise.all(
+    this.config.$apollon_project_implementations.middleware.map(p =>
+      import(pathToFileURL(path.join(process.cwd(), p)))
     )
-  ).map(e => e.default);
+  )).map(e => e.default);
 
   const futurMiddleware = middlewareWrappers
     .map(wrapper => {
