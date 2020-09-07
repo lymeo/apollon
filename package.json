@@ -9,7 +9,7 @@
   "author": "Lymeo SAS",
   "license": "APACHE 2.0",
   "dependencies": {
-    "apollo-server-express": "2.10.1",
+    "apollo-server-express": "2.14.2",
     "bunyan": "1.8.12",
     "cors": "2.8.4",
     "express": "4.16.3",
