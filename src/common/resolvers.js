@@ -1,6 +1,7 @@
 import path from "path";
 import helperBootstrap from "../common/helpers.js";
 import logger from "../common/logger.js";
+import { pathToFileURL } from "url";
 
 export default async function() {
   /*
@@ -14,7 +15,9 @@ export default async function() {
   );
 
   for (let filepath of this.config.$apollon_project_implementations.types) {
-    const type = (await import(path.join(process.cwd(), filepath))).default;
+    const type = (await import(
+      pathToFileURL(path.join(process.cwd(), filepath))
+    )).default;
     if (type && type.name) {
       resolvers[type.name] = type;
     }
@@ -26,7 +29,8 @@ export default async function() {
   //Setting up resolvers by forwarding schema so that each resolver can add its own implementation
   logger.debug(`- Resolvers`);
   for (let filepath of this.config.$apollon_project_implementations.resolvers) {
-    let imp = (await import(path.join(process.cwd(), filepath))).default;
+    let imp = (await import(pathToFileURL(path.join(process.cwd(), filepath))))
+      .default;
     if (imp) {
       await imp.call(resolvers, this, helpers);
       logger.debug({ filepath }, `-- Delegated to`);

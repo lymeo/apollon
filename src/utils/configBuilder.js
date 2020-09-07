@@ -3,6 +3,7 @@ import fse from "fs-extra";
 import yaml from "js-yaml";
 import glob from "glob";
 import path from "path";
+import { pathToFileURL } from "url";
 
 //Custom
 import logger from "../common/logger.js";
@@ -31,7 +32,7 @@ export default async function() {
   logger.debug("- Preparing config");
   const configs = glob.sync(this.config.sources.config).map(filepath => {
     logger.debug({ filepath }, `-- Importing config file`);
-    return import(path.join(process.cwd(), filepath));
+    return import(pathToFileURL(path.join(process.cwd(), filepath)));
   });
   deepMerge(this.config, ...(await Promise.all(configs)).map(e => e.default));
 

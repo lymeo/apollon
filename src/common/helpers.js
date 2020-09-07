@@ -1,6 +1,7 @@
 import subscriptionsHelper from "../helpers/subscriptions.js";
 import path from "path";
 import logger from "./logger.js";
+import { pathToFileURL } from "url";
 
 export default async function(resolvers) {
   const helpers = {};
@@ -12,7 +13,7 @@ export default async function(resolvers) {
   // Manage custom helpers
   const helperImports = await Promise.all(
     this.config.$apollon_project_implementations.helpers.map(p =>
-      import(path.join(process.cwd(), p))
+      import(pathToFileURL(path.join(process.cwd(), p)))
     )
   );
 

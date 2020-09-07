@@ -1,5 +1,6 @@
 import path from "path";
 import logger from "./logger.js";
+import { pathToFileURL } from "url";
 
 export default async function() {
   const injectors = [];
@@ -7,7 +8,7 @@ export default async function() {
   logger.debug("--- Setting up injectors");
   const injectorImports = await Promise.all(
     this.config.$apollon_project_implementations.injectors.map(p =>
-      import(path.join(process.cwd(), p))
+      import(pathToFileURL(path.join(process.cwd(), p)))
     )
   );
 
